@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { adminAuth, adminDb } from "../..//lib/firebase/admin";
+import { adminAuth, adminDb } from "../../lib/firebase/admin";
 import AdminSidebar from "../../components/admin/AdminSidebar"; // ajusta la ruta
 import AdminHeader from "../../components/admin/AdminHeader";   // o usa NavbarWrapper
 
