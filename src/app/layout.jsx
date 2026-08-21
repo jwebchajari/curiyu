@@ -1,5 +1,5 @@
-import { AuthProvider } from "@/context/AuthContext";
-import Navbar from "@/components/layout/Navbar";
+// src/app/layout.jsx
+import { Providers } from "./providers";
 import "./globals.css";
 
 export const metadata = {
@@ -7,14 +7,17 @@ export const metadata = {
   description: "Rugby y Hockey en Chajarí, Entre Ríos",
 };
 
+// src/app/layout.jsx
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({ children }) {
   return (
     <html lang="es">
       <body>
-        <AuthProvider>
-          <Navbar />
+        <Providers>
           <main>{children}</main>
-        </AuthProvider>
+        </Providers>
       </body>
     </html>
   );
