@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import Navbar from "@/components/layout/Navbar";
 
 
 export const metadata = {
@@ -12,7 +11,6 @@ export const metadata = {
 export default function Home() {
   return (
     <>
-      <Navbar />
       <div className="flex flex-col">
         {/* HERO */}
         <section className="relative bg-verde text-white py-24 md:py-36 text-center px-4 overflow-hidden">
