@@ -1,14 +1,17 @@
-// lib/firebase-admin.ts
+// src/lib/firebase/admin.js
 import { getApps, initializeApp, cert } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
+import { getFirestore } from "firebase-admin/firestore";
 
 function getPrivateKey() {
 	const key = process.env.FIREBASE_PRIVATE_KEY;
-	if (!key) throw new Error("FIREBASE_PRIVATE_KEY no está definida");
-	// Soporta key con \n literales (Vercel) o con saltos reales (.env local)
+	if (!key) throw new Error("Falta FIREBASE_PRIVATE_KEY");
 	return key.includes("\\n") ? key.replace(/\\n/g, "\n") : key;
 }
 
-if (getApps().length === 0) {
+function getFirebaseAdminApp() {
+	if (getApps().length > 0) return getApps()[0];
+
 	if (
 		!process.env.FIREBASE_PROJECT_ID ||
 		!process.env.FIREBASE_CLIENT_EMAIL ||
@@ -17,7 +20,7 @@ if (getApps().length === 0) {
 		throw new Error("Faltan variables de entorno de Firebase Admin");
 	}
 
-	initializeApp({
+	return initializeApp({
 		credential: cert({
 			projectId: process.env.FIREBASE_PROJECT_ID,
 			clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
@@ -26,4 +29,7 @@ if (getApps().length === 0) {
 	});
 }
 
-export { getApps };
+const app = getFirebaseAdminApp();
+
+export const adminAuth = getAuth(app);
+export const adminDb = getFirestore(app);
