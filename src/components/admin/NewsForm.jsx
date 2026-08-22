@@ -16,7 +16,6 @@ export default function NewsForm({ mode, initialData = {} }) {
   const [coverImage, setCoverImage] = useState(null);
   const [coverImageUrl, setCoverImageUrl] = useState(initialData.coverImageUrl || "");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const fileInputRef = useRef(null);
 
   const handleFileChange = (e) => {
@@ -33,7 +32,6 @@ export default function NewsForm({ mode, initialData = {} }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
     try {
       let imageUrl = coverImageUrl;
@@ -56,9 +54,9 @@ export default function NewsForm({ mode, initialData = {} }) {
       }
       router.push("/admin/noticias/listar");
       router.refresh();
-    } catch (err) {
-      console.error("Error detallado:", err);
-      setError(err.message || "Error al guardar noticia");
+    } catch (error) {
+      alert("Error al guardar noticia: " + error.message);
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -66,11 +64,6 @@ export default function NewsForm({ mode, initialData = {} }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 max-w-3xl">
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
-          {error}
-        </div>
-      )}
       <div>
         <label className="block text-sm font-medium text-gray-700">Título</label>
         <input

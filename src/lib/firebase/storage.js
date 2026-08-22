@@ -1,40 +1,28 @@
 // src/lib/firebase/storage.js
-import { storage } from "./client";
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
-import imageCompression from "browser-image-compression";
-
 export async function uploadNewsImage(file, slug) {
   try {
-    // Sanitizar slug para URL segura
-    const cleanSlug = slug
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
-    
-    const options = {
-      maxSizeMB: 0.5,
-      maxWidthOrHeight: 1200,
-      useWebWorker: true,
-      fileType: "image/webp",
-    };
-    const compressedFile = await imageCompression(file, options);
-    const path = `news/${cleanSlug}-${Date.now()}.webp`;
-    const storageRef = ref(storage, path);
-    await uploadBytes(storageRef, compressedFile);
-    const url = await getDownloadURL(storageRef);
-    return url;
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET);
+
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error?.message || "Error al subir");
+    return data.secure_url;
   } catch (error) {
-    console.error("Error al subir imagen:", error);
-    throw new Error(`Error al subir imagen: ${error.message}`);
+    console.error("Error al subir imagen a Cloudinary:", error);
+    throw error;
   }
 }
 
 export async function deleteNewsImage(url) {
-  try {
-    const storageRef = ref(storage, url);
-    await deleteObject(storageRef);
-  } catch (error) {
-    console.error("Error al eliminar imagen:", error);
-    throw error;
-  }
+  // Opcional: si quieres eliminar, puedes implementarlo con cloudinary.api.delete_resources
+  return true;
 }
