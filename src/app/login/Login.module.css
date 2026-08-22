@@ -1,0 +1,86 @@
+/* src/app/login/Login.module.css */
+.container {
+    min-height: calc(100vh - 80px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+}
+
+.card {
+    background: white;
+    border-radius: 1.5rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e7eb;
+    padding: 2rem;
+    max-width: 28rem;
+    width: 100%;
+    transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.12);
+}
+
+.logo {
+    display: block;
+    margin: 0 auto 1rem auto;
+}
+
+.title {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    color: #1a4d3e;
+    text-align: center;
+}
+
+.subtitle {
+    font-size: 0.875rem;
+    color: #6b7280;
+    text-align: center;
+    margin-top: 0.25rem;
+}
+
+.error {
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 0.5rem;
+    color: #b91c1c;
+    font-size: 0.875rem;
+}
+
+.input {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.input:focus {
+    outline: none;
+    border-color: #1a4d3e;
+    box-shadow: 0 0 0 3px rgba(26, 77, 62, 0.2);
+}
+
+.button {
+    width: 100%;
+    background: #1a4d3e;
+    color: white;
+    font-weight: 600;
+    padding: 0.625rem 0;
+    border-radius: 9999px;
+    transition: background 0.2s;
+}
+
+.button:hover {
+    background: #0f3a2f;
+}
+
+.button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

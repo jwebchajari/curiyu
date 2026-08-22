@@ -1,3 +1,4 @@
+// src/app/login/page.jsx
 "use client";
 
 import { useState } from "react";
@@ -5,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { auth, db } from "@/lib/firebase/client";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import Image from "next/image"; // o usa <img> si prefieres
+import Image from "next/image";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -21,12 +22,10 @@ export default function LoginPage() {
         setIsSubmitting(true);
 
         try {
-            // 1. Autenticar con Firebase Auth
             await signIn(email, password);
             const currentUser = auth.currentUser;
             if (!currentUser) throw new Error("Usuario no autenticado");
 
-            // 2. Verificar/crear documento en Firestore
             const userRef = doc(db, "users", currentUser.uid);
             const userSnap = await getDoc(userRef);
 
@@ -35,17 +34,12 @@ export default function LoginPage() {
                     email: currentUser.email,
                     name: currentUser.displayName || "Usuario",
                     active: true,
-                    roles: ["SUPER_ROOT"], // ← Asegura que tenga este rol
+                    roles: ["SUPER_ROOT"],
                     createdAt: new Date().toISOString(),
                 });
                 console.log("✅ Documento creado para UID:", currentUser.uid);
-            } else {
-                console.log("📄 Documento ya existe para UID:", currentUser.uid);
-                // Opcional: actualizar el rol si es necesario
-                // await updateDoc(userRef, { roles: ["SUPER_ROOT"] });
             }
 
-            // 3. Crear cookie de sesión
             const idToken = await currentUser.getIdToken();
             const res = await fetch("/api/session", {
                 method: "POST",
@@ -58,7 +52,6 @@ export default function LoginPage() {
                 throw new Error(data.error || "Error al crear sesión");
             }
 
-            // 4. Redirigir al panel
             router.push("/admin");
         } catch (err) {
             console.error("❌ Error de login:", err);
@@ -80,21 +73,20 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-16">
-            <div className="w-full max-w-md px-4">
-                <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-8">
+        <div className="min-h-[calc(100vh-80px)] flex items-center justify-center py-12 px-4 bg-gradient-to-br from-gray-50 to-gray-100">
+            <div className="w-full max-w-md">
+                <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 transition-all hover:shadow-2xl">
                     <div className="text-center mb-8">
-                        {/* Usa <img> si no quieres importar Image */}
-                        <img
-                            src="/logo2.png"
-                            alt="Club Curiyú"
-                            width="80"
-                            height="80"
-                            className="rounded-full mx-auto mb-4 object-cover"
-                            style={{ width: "80px", height: "80px" }}
+                        <Image
+                            src="/logo.png"
+                            alt="Logo del Club Curiyú"
+                            width={180}
+                            height={90}
+                            className="mx-auto mb-4"
+                            priority
                         />
                         <h1 className="font-display text-3xl text-verde">Iniciar Sesión</h1>
-                        <p className="text-sm text-oscuro/60 mt-1">
+                        <p className="text-sm text-gray-500 mt-1">
                             Ingresá para acceder al panel de administración
                         </p>
                     </div>
@@ -107,7 +99,7 @@ export default function LoginPage() {
 
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-oscuro mb-1">
+                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                                 Email
                             </label>
                             <input
@@ -117,12 +109,12 @@ export default function LoginPage() {
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
                                 autoComplete="email"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde focus:border-transparent"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde focus:border-transparent transition"
                                 placeholder="tu@email.com"
                             />
                         </div>
                         <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-oscuro mb-1">
+                            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                                 Contraseña
                             </label>
                             <input
@@ -132,14 +124,14 @@ export default function LoginPage() {
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
                                 autoComplete="current-password"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde focus:border-transparent"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde focus:border-transparent transition"
                                 placeholder="••••••••"
                             />
                         </div>
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="w-full bg-verde text-white font-semibold py-2 rounded-full hover:bg-verde-oscuro transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full bg-verde text-white font-semibold py-2.5 rounded-full hover:bg-verde-oscuro transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
                         >
                             {isSubmitting ? "Ingresando..." : "Ingresar"}
                         </button>

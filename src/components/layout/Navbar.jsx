@@ -1,3 +1,4 @@
+// src/components/layout/Navbar.jsx
 "use client";
 
 import { useState } from "react";
@@ -45,8 +46,8 @@ export default function Navbar() {
     const pathname = usePathname();
     const { user } = useAuth();
 
-    // Ocultar el navbar en rutas de admin o si el usuario está autenticado
-    if (pathname?.startsWith("/admin") || user) {
+    // Solo ocultar en rutas de admin
+    if (pathname?.startsWith("/admin")) {
         return null;
     }
 
@@ -137,13 +138,17 @@ export default function Navbar() {
                         Fixture
                     </Link>
 
-                    {/* Botón de Iniciar Sesión (solo visible para no autenticados) */}
-                    <Link
-                        href="/login"
-                        className="ml-2 bg-verde text-white px-5 py-2 rounded-full hover:bg-verde-oscuro transition-colors shadow-sm"
-                    >
-                        Ingresar
-                    </Link>
+                    {!user && (
+                        <Link
+                            href="/login"
+                            className="ml-2 bg-verde text-white px-5 py-2 rounded-full hover:bg-verde-oscuro transition-colors shadow-sm"
+                        >
+                            Ingresar
+                        </Link>
+                    )}
+                    {user && (
+                        <span className="ml-2 text-sm text-gray-600">👋 {user.email}</span>
+                    )}
                 </div>
 
                 {/* Hamburguesa */}
@@ -256,14 +261,20 @@ export default function Navbar() {
                             Fixture
                         </Link>
 
-                        {/* En móvil también solo mostramos Ingresar */}
-                        <Link
-                            href="/login"
-                            onClick={close}
-                            className="mt-1 bg-verde text-white text-center px-5 py-2 rounded-full text-sm font-semibold hover:bg-verde-oscuro transition-colors"
-                        >
-                            Ingresar
-                        </Link>
+                        {!user && (
+                            <Link
+                                href="/login"
+                                onClick={close}
+                                className="mt-1 bg-verde text-white text-center px-5 py-2 rounded-full text-sm font-semibold hover:bg-verde-oscuro transition-colors"
+                            >
+                                Ingresar
+                            </Link>
+                        )}
+                        {user && (
+                            <span className="mt-1 text-center text-sm text-gray-600">
+                                👋 {user.email}
+                            </span>
+                        )}
                     </div>
                 </div>
             )}
