@@ -1,10 +1,21 @@
-// app/admin/page.jsx
-export default function AdminPage() {
+// src/app/admin/noticias/page.jsx (ejemplo de uso de tabs)
+import AdminTabs from "@/components/admin/AdminTabs";
+
+const tabs = [
+    { slug: "listar", label: "Listar" },
+    { slug: "crear", label: "Crear" },
+    { slug: "editar", label: "Editar" },
+];
+
+export default function NoticiasPage() {
     return (
-        <div className="p-8 max-w-6xl mx-auto">
-            <h1 className="text-4xl font-display text-verde mb-4">Panel de Administración</h1>
-            <p className="text-gray-600">Bienvenido, administrador. Aquí puedes gestionar el contenido del club.</p>
-            {/* Aquí irán los componentes del dashboard */}
+        <div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Noticias</h2>
+            <AdminTabs tabs={tabs} basePath="/admin/noticias" />
+            {/* Aquí renderizarías el contenido según la ruta activa */}
+            <div className="mt-6">
+                <p>Contenido de la pestaña actual.</p>
+            </div>
         </div>
     );
 }

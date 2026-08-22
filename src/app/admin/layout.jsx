@@ -1,8 +1,9 @@
+// src/app/admin/layout.jsx
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import AdminSidebar from "@/components/admin/AdminSidebar"; // ajusta la ruta
+import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
-import { adminAuth, adminDb } from "../../lib/firebase/admin";
+import { adminAuth, adminDb } from "@/lib/firebase/admin";
 
 const COOKIE_NAME = "session";
 
@@ -36,17 +37,12 @@ export default async function AdminLayout({ children }) {
         redirect("/login");
     }
 
+    // Pasar userData al header
     return (
         <div className="flex h-screen bg-gray-50">
-            {/* Sidebar */}
             <AdminSidebar />
-
-            {/* Contenido principal */}
             <div className="flex-1 flex flex-col overflow-hidden">
-                {/* Header con logout */}
                 <AdminHeader user={userData} />
-
-                {/* Contenido de la página */}
                 <main className="flex-1 overflow-y-auto p-6">
                     {children}
                 </main>

@@ -4,8 +4,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/hooks/useAuth";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase/client";
 
 const ChevronIcon = ({ className }) => (
     <svg
@@ -44,6 +46,7 @@ export default function Navbar() {
     const [menuOpen, setMenuOpen] = useState(false);
     const [submenu, setSubmenu] = useState(null);
     const pathname = usePathname();
+    const router = useRouter();
     const { user } = useAuth();
 
     // Solo ocultar en rutas de admin
@@ -55,6 +58,16 @@ export default function Navbar() {
     const close = () => {
         setMenuOpen(false);
         setSubmenu(null);
+    };
+
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            await fetch("/api/logout", { method: "POST" });
+            router.push("/login");
+        } catch (error) {
+            console.error("Error al cerrar sesión:", error);
+        }
     };
 
     return (
@@ -147,7 +160,15 @@ export default function Navbar() {
                         </Link>
                     )}
                     {user && (
-                        <span className="ml-2 text-sm text-gray-600">👋 {user.email}</span>
+                        <div className="flex items-center gap-3 ml-2">
+                            <span className="text-sm text-gray-600">👋 {user.email}</span>
+                            <button
+                                onClick={handleLogout}
+                                className="bg-red-600 text-white px-4 py-1.5 rounded-full text-sm hover:bg-red-700 transition-colors"
+                            >
+                                Cerrar sesión
+                            </button>
+                        </div>
                     )}
                 </div>
 
@@ -202,8 +223,9 @@ export default function Navbar() {
                         >
                             Rugby
                             <ChevronIcon
-                                className={`w-4 h-4 transition-transform ${submenu === "rugby" ? "rotate-180" : ""
-                                    }`}
+                                className={`w-4 h-4 transition-transform ${
+                                    submenu === "rugby" ? "rotate-180" : ""
+                                }`}
                             />
                         </button>
                         {submenu === "rugby" && (
@@ -227,8 +249,9 @@ export default function Navbar() {
                         >
                             Hockey
                             <ChevronIcon
-                                className={`w-4 h-4 transition-transform ${submenu === "hockey" ? "rotate-180" : ""
-                                    }`}
+                                className={`w-4 h-4 transition-transform ${
+                                    submenu === "hockey" ? "rotate-180" : ""
+                                }`}
                             />
                         </button>
                         {submenu === "hockey" && (
@@ -271,9 +294,17 @@ export default function Navbar() {
                             </Link>
                         )}
                         {user && (
-                            <span className="mt-1 text-center text-sm text-gray-600">
-                                👋 {user.email}
-                            </span>
+                            <div className="mt-1 flex flex-col gap-2">
+                                <span className="text-center text-sm text-gray-600">
+                                    👋 {user.email}
+                                </span>
+                                <button
+                                    onClick={handleLogout}
+                                    className="bg-red-600 text-white text-center px-5 py-2 rounded-full text-sm font-semibold hover:bg-red-700 transition-colors"
+                                >
+                                    Cerrar sesión
+                                </button>
+                            </div>
                         )}
                     </div>
                 </div>
