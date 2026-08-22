@@ -4,7 +4,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { deleteNews } from "@/lib/firebase/news";
-import { deleteNewsImage } from "@/lib/firebase/storage";
 
 export default function NewsList({ news, canManage }) {
   const router = useRouter();
