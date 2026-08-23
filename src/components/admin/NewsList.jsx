@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { deleteNewsAction } from "@/app/admin/noticias/actions"; // Ruta corregida
+import { deleteNewsAction } from "@/app/admin/noticias/actions";
 
 const FALLBACK_IMAGE = "https://via.placeholder.com/400x200/cccccc/666666?text=Sin+Imagen";
 
@@ -17,7 +17,7 @@ export default function NewsList({ news, canManage }) {
       startTransition(async () => {
         const result = await deleteNewsAction(newsId);
         if (result?.success) {
-          router.refresh();
+          router.refresh(); // Esto actualiza los datos en pantalla
         } else {
           alert(result?.error || "Error al eliminar la noticia.");
         }
@@ -30,9 +30,6 @@ export default function NewsList({ news, canManage }) {
     return (
       <div className="bg-yellow-50 border-2 border-yellow-200 rounded-md p-8 text-center">
         <p className="text-yellow-700 text-lg">📭 No hay noticias disponibles</p>
-        <p className="text-gray-500 text-sm mt-2">
-          {news ? `Recibidas ${news.length} noticias` : "No se recibieron datos"}
-        </p>
         {canManage && (
           <Link
             href="/admin/noticias/crear"
@@ -90,7 +87,7 @@ export default function NewsList({ news, canManage }) {
                   <div className="flex gap-3 items-center">
                     <Link href={`/admin/noticias/editar/${item.id}`} className="text-blue-600 hover:text-blue-800 font-medium">Editar</Link>
 
-                    {/* Botón de Eliminar con funcionalidad */}
+                    {/* Botón de Eliminar */}
                     <button
                       onClick={() => handleDelete(item.id)}
                       disabled={isPending}

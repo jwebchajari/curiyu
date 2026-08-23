@@ -9,7 +9,6 @@ import { revalidatePath } from "next/cache";
 export async function deleteNewsAction(newsId) {
 	if (!newsId) return { error: "ID inválido" };
 
-	// Verificar sesión y permisos
 	const cookieStore = await cookies();
 	const sessionCookie = cookieStore.get("session");
 	if (!sessionCookie?.value) redirect("/login");
@@ -33,15 +32,12 @@ export async function deleteNewsAction(newsId) {
 
 	if (!canManage) redirect("/admin");
 
-	// Eliminar el documento de Firestore
 	try {
 		await adminDb.collection("news").doc(newsId).delete();
-
-		// Refresca la caché de la página para que la lista se actualice sin recargar manualmente
-		revalidatePath("/admin/noticias");
+		// 🔥 CAMBIO CLAVE: Revalidamos la página real que se está mostrando (/admin)
+		revalidatePath("/admin");
 		return { success: true };
 	} catch (error) {
-		console.error("Error eliminando noticia:", error);
 		return { error: "Error al eliminar la noticia." };
 	}
 }
