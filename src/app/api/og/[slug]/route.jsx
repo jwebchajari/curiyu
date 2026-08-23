@@ -1,7 +1,7 @@
 import { getNewsBySlug } from "@/lib/firebase/news";
 import { ImageResponse } from "next/og";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 export async function GET(request, { params }) {
     const news = await getNewsBySlug(params.slug);
