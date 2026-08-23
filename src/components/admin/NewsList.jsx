@@ -2,122 +2,101 @@
 "use client";
 
 import Link from "next/link";
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { deleteNews } from "@/lib/firebase/news";
-import { deleteNewsImage } from "@/lib/firebase/storage";
+import { deleteNewsAction } from "@/app/admin/noticias/actions"; // Ruta corregida
+
+const FALLBACK_IMAGE = "https://via.placeholder.com/400x200/cccccc/666666?text=Sin+Imagen";
 
 export default function NewsList({ news, canManage }) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
-  const handleDelete = async (id, imageUrl) => {
-    if (!confirm("¿Eliminar esta noticia?")) return;
-    try {
-      if (imageUrl) {
-        await deleteNewsImage(imageUrl);
-      }
-      await deleteNews(id);
-      router.refresh();
-    } catch (error) {
-      alert("Error al eliminar: " + error.message);
-      console.error(error);
+  const handleDelete = (newsId) => {
+    if (confirm("¿Estás seguro de que deseas eliminar esta noticia? Esta acción no se puede deshacer.")) {
+      startTransition(async () => {
+        const result = await deleteNewsAction(newsId);
+        if (result?.success) {
+          router.refresh();
+        } else {
+          alert(result?.error || "Error al eliminar la noticia.");
+        }
+      });
     }
   };
 
-  const crearNoticiaPrueba = async () => {
-    try {
-      const response = await fetch('/api/test-news', { method: 'POST' });
-      const data = await response.json();
-      if (data.success) {
-        alert("✅ Noticia de prueba creada");
-        router.refresh();
-      } else {
-        alert("❌ Error: " + data.error);
-      }
-    } catch (error) {
-      alert("❌ Error: " + error.message);
-      console.error(error);
-    }
-  };
-
-  if (!news || news.length === 0) {
+  // Si no hay noticias
+  if (!news || !Array.isArray(news) || news.length === 0) {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-md p-6 text-center">
-        <p className="text-yellow-700">📭 No hay noticias disponibles</p>
-        <div className="mt-3 space-x-3">
-          {canManage && (
-            <>
-              <Link
-                href="/admin/noticias/crear"
-                className="inline-block text-verde hover:underline"
-              >
-                Crear la primera noticia →
-              </Link>
-              <button
-                onClick={crearNoticiaPrueba}
-                className="inline-block bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-md text-sm"
-              >
-                🔧 Crear noticia de prueba
-              </button>
-            </>
-          )}
-        </div>
+      <div className="bg-yellow-50 border-2 border-yellow-200 rounded-md p-8 text-center">
+        <p className="text-yellow-700 text-lg">📭 No hay noticias disponibles</p>
+        <p className="text-gray-500 text-sm mt-2">
+          {news ? `Recibidas ${news.length} noticias` : "No se recibieron datos"}
+        </p>
+        {canManage && (
+          <Link
+            href="/admin/noticias/crear"
+            className="inline-block mt-4 bg-verde text-white px-4 py-2 rounded-full hover:bg-verde-oscuro transition"
+          >
+            + Crear noticia
+          </Link>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto shadow-md rounded-lg">
+      <div className="bg-green-50 border-2 border-green-200 rounded-md p-2 mb-4 text-sm text-center">
+        ✅ {news.length} noticias cargadas correctamente en el cliente
+      </div>
+
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Título
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Imagen
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Fecha
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Acciones
-            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Título</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Imagen</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {news.map((item) => (
-            <tr key={item.id}>
-              <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                {item.title || "Sin título"}
-              </td>
+          {news.map((item, index) => (
+            <tr key={item.id || index} className="hover:bg-gray-50">
+              <td className="px-6 py-4 text-sm text-gray-900">{item.title || "Sin título"}</td>
               <td className="px-6 py-4">
                 {item.coverImageUrl ? (
                   <img
                     src={item.coverImageUrl}
                     alt={item.title || "Noticia"}
-                    className="h-12 w-16 object-cover rounded"
+                    className="h-12 w-16 object-cover rounded bg-gray-100"
+                    onError={(e) => {
+                      if (e.target.src === FALLBACK_IMAGE) {
+                        e.target.style.display = 'none';
+                      } else {
+                        e.target.src = FALLBACK_IMAGE;
+                      }
+                    }}
                   />
                 ) : (
                   <span className="text-gray-400 text-xs">Sin imagen</span>
                 )}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {item.publishedAt?.toDate?.()?.toLocaleDateString("es-ES") || "Sin fecha"}
+                {item.publishedAt || "Sin fecha"}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm">
                 {canManage && (
-                  <div className="flex gap-2 items-center">
-                    <Link
-                      href={`/admin/noticias/editar/${item.id}`}
-                      className="text-verde hover:underline font-medium"
-                    >
-                      Editar
-                    </Link>
+                  <div className="flex gap-3 items-center">
+                    <Link href={`/admin/noticias/editar/${item.id}`} className="text-blue-600 hover:text-blue-800 font-medium">Editar</Link>
+
+                    {/* Botón de Eliminar con funcionalidad */}
                     <button
-                      onClick={() => handleDelete(item.id, item.coverImageUrl)}
-                      className="text-red-600 hover:underline font-medium"
+                      onClick={() => handleDelete(item.id)}
+                      disabled={isPending}
+                      className="text-red-600 hover:text-red-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Eliminar
+                      {isPending ? "Eliminando..." : "Eliminar"}
                     </button>
                   </div>
                 )}
