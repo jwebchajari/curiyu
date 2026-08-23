@@ -1,8 +1,6 @@
-// src/app/admin/noticias/page.jsx
 import { getAllNews } from "@/lib/firebase/news";
 import NewsList from "@/components/admin/NewsList";
 import AdminTabs from "@/components/admin/AdminTabs";
-export const dynamic = 'force-dynamic';
 
 const tabs = [
   { slug: "listar", label: "📋 Listar" },
@@ -10,14 +8,11 @@ const tabs = [
 ];
 
 export default async function NoticiasPage() {
-  console.log("🔵 [SERVER] Cargando NoticiasPage...");
-
   let news = [];
   let error = null;
 
   try {
     const rawNews = await getAllNews();
-
     // Convertimos las fechas de Firestore a strings legibles
     news = rawNews.map((item) => ({
       ...item,
@@ -28,13 +23,11 @@ export default async function NoticiasPage() {
         ? item.updatedAt.toDate().toLocaleDateString("es-ES")
         : (item.updatedAt || "Sin fecha"),
     }));
-
   } catch (err) {
-    console.error("❌ [SERVER] Error:", err);
     error = err.message;
   }
 
-  // Si no hay noticias, usar datos de prueba para que el dashboard no se vea vacío
+  // Datos de prueba si no hay noticias
   if (news.length === 0) {
     news = [
       { id: "test-1", title: "🔵 Noticia de prueba 1", slug: "noticia-prueba-1", coverImageUrl: "", publishedAt: new Date().toLocaleDateString("es-ES"), updatedAt: new Date().toLocaleDateString("es-ES") },
@@ -57,7 +50,6 @@ export default async function NoticiasPage() {
             <strong>Error:</strong> {error}
           </div>
         ) : (
-          // 🔥 AQUÍ ESTÁ LA CLAVE: Pasamos el array `news` correctamente
           <NewsList news={news} canManage={true} />
         )}
       </div>

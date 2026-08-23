@@ -15,10 +15,9 @@ const IgIcon = () => (
 export default function Footer() {
     return (
         <footer className="bg-verde text-white/80">
-            <div className="container-club py-14 grid grid-cols-1 md:grid-cols-4 gap-10">
-
+            <div className="container-club px-4 py-12 md:py-14 grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-10">
                 {/* Identidad */}
-                <div className="md:col-span-1">
+                <div>
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-display text-lg">C</div>
                         <div>
@@ -43,7 +42,7 @@ export default function Footer() {
                             { href: "/fixture", label: "Fixture" },
                         ].map(l => (
                             <li key={l.href}>
-                                <Link href={l.href} className="hover:text-white transition-colors">{l.label}</Link>
+                                <Link href={l.href} className="hover:text-white transition-colors py-1 inline-block">{l.label}</Link>
                             </li>
                         ))}
                     </ul>
@@ -83,13 +82,12 @@ export default function Footer() {
                         </a>
                     </div>
                 </div>
-
             </div>
 
             <div className="border-t border-white/20">
-                <div className="container-club py-4 flex flex-col md:flex-row items-center justify-between text-xs text-white/60">
+                <div className="container-club px-4 py-4 flex flex-col md:flex-row items-center justify-between text-xs text-white/60 gap-2">
                     <p>© {new Date().getFullYear()} Club de Rugby y Hockey Curiyú. Todos los derechos reservados.</p>
-                    <p className="mt-1 md:mt-0">Chajarí, Entre Ríos, Argentina</p>
+                    <p>Chajarí, Entre Ríos, Argentina</p>
                 </div>
             </div>
         </footer>

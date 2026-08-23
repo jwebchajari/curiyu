@@ -39,25 +39,6 @@ export default async function NoticiasPage() {
         error = err.message;
     }
 
-    // Datos de prueba si no hay noticias
-    if (news.length === 0) {
-        console.log("📊 [SERVER] Usando datos de prueba");
-        news = [
-            {
-                id: "test-1",
-                title: "🔵 Noticia de prueba 1",
-                slug: "noticia-prueba-1",
-                excerpt: "Esta es una noticia de prueba",
-                content: "<p>Contenido de prueba</p>",
-                coverImageUrl: "https://via.placeholder.com/400x200/22c55e/ffffff?text=Test",
-                publishedAt: new Date().toLocaleDateString("es-ES"), // Ya es string
-                updatedAt: new Date().toLocaleDateString("es-ES")
-            },
-            // ... (el segundo dato de prueba igual, con fechas string)
-        ];
-    }
-
-    console.log(`📊 [SERVER] Enviando ${news.length} noticias al cliente`);
 
     return (
         <div>

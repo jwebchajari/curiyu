@@ -9,10 +9,8 @@ export const metadata = {
 };
 
 export default async function NoticiasPage() {
-    // Obtenemos las noticias
     const rawNews = await getAllNews();
 
-    // 🛠️ CORRECCIÓN: Serializamos los datos para que el cliente pueda leerlos sin errores
     const news = rawNews.map((item) => ({
         ...item,
         publishedAt: item.publishedAt?.toDate?.()
@@ -24,8 +22,8 @@ export default async function NoticiasPage() {
     }));
 
     return (
-        <div className="container-club py-16">
-            <h1 className="font-display text-5xl md:text-6xl text-verde mb-8">Noticias</h1>
+        <div className="max-w-7xl mx-auto px-4 py-10 md:py-16">
+            <h1 className="font-display text-4xl md:text-6xl text-verde mb-6 md:mb-8">Noticias</h1>
             <NewsGrid news={news} />
         </div>
     );

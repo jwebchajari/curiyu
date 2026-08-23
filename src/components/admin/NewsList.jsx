@@ -2,30 +2,36 @@
 "use client";
 
 import Link from "next/link";
-import { useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { deleteNewsAction } from "@/app/admin/noticias/actions";
 
 const FALLBACK_IMAGE = "https://via.placeholder.com/400x200/cccccc/666666?text=Sin+Imagen";
 
 export default function NewsList({ news, canManage }) {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [deletingId, setDeletingId] = useState(null);
 
-  const handleDelete = (newsId) => {
-    if (confirm("¿Estás seguro de que deseas eliminar esta noticia? Esta acción no se puede deshacer.")) {
-      startTransition(async () => {
-        const result = await deleteNewsAction(newsId);
-        if (result?.success) {
-          router.refresh(); // Esto actualiza los datos en pantalla
-        } else {
-          alert(result?.error || "Error al eliminar la noticia.");
-        }
-      });
+  const handleDelete = async (e, newsId) => {
+    e.preventDefault(); // Evita el envío del formulario
+    if (!confirm("¿Estás seguro de eliminar esta noticia?")) return;
+
+    setDeletingId(newsId);
+    try {
+      const result = await deleteNewsAction(newsId);
+
+      if (result?.success) {
+        // Recarga la página para mostrar los datos actualizados
+        window.location.reload();
+      } else {
+        alert(result?.error || "Error al eliminar la noticia.");
+        setDeletingId(null);
+      }
+    } catch (error) {
+      console.error("Error en el cliente:", error);
+      alert("Error inesperado al comunicarse con el servidor.");
+      setDeletingId(null);
     }
   };
 
-  // Si no hay noticias
   if (!news || !Array.isArray(news) || news.length === 0) {
     return (
       <div className="bg-yellow-50 border-2 border-yellow-200 rounded-md p-8 text-center">
@@ -58,8 +64,8 @@ export default function NewsList({ news, canManage }) {
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {news.map((item, index) => (
-            <tr key={item.id || index} className="hover:bg-gray-50">
+          {news.map((item) => (
+            <tr key={item.id} className="hover:bg-gray-50">
               <td className="px-6 py-4 text-sm text-gray-900">{item.title || "Sin título"}</td>
               <td className="px-6 py-4">
                 {item.coverImageUrl ? (
@@ -87,13 +93,13 @@ export default function NewsList({ news, canManage }) {
                   <div className="flex gap-3 items-center">
                     <Link href={`/admin/noticias/editar/${item.id}`} className="text-blue-600 hover:text-blue-800 font-medium">Editar</Link>
 
-                    {/* Botón de Eliminar */}
                     <button
-                      onClick={() => handleDelete(item.id)}
-                      disabled={isPending}
+                      type="button"
+                      onClick={(e) => handleDelete(e, item.id)}
+                      disabled={deletingId === item.id}
                       className="text-red-600 hover:text-red-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isPending ? "Eliminando..." : "Eliminar"}
+                      {deletingId === item.id ? "Eliminando..." : "Eliminar"}
                     </button>
                   </div>
                 )}
