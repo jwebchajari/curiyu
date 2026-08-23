@@ -10,34 +10,36 @@ function getCredentials() {
 
 	if (!projectId || !clientEmail || !privateKey) {
 		throw new Error(
-			"Faltan variables de entorno: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY",
+			"❌ Faltan variables de entorno: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY",
 		);
 	}
 
-	// Limpieza total de la clave privada (quita comillas, convierte \n a salto real, quita espacios sobrantes)
-	const cleanedPrivateKey = privateKey
+	// 🔥 Limpieza quirúrgica: Quita comillas, convierte \n a saltos reales y quita espacios
+	const cleanKey = privateKey
 		.replace(/\\n/g, "\n")
-		.replace(/^"|"$/g, "") // Quita comillas dobles al inicio y final
-		.replace(/^'|'$/g, "") // Quita comillas simples al inicio y final
+		.replace(/^"|"$/g, "")
+		.replace(/^'|'$/g, "")
 		.trim();
 
-	return cert({ projectId, clientEmail, privateKey: cleanedPrivateKey });
+	return cert({
+		projectId,
+		clientEmail,
+		privateKey: cleanKey,
+	});
 }
 
-let adminApp;
-if (!getApps().length) {
-	try {
-		adminApp = initializeApp({ credential: getCredentials() });
+let app;
+try {
+	if (!getApps().length) {
+		app = initializeApp({ credential: getCredentials() });
 		console.log("✅ Firebase Admin inicializado correctamente");
-	} catch (error) {
-		console.error("❌ Error al inicializar Firebase Admin:", error);
-		throw error; // Esto hará que la API devuelva un error claro
+	} else {
+		app = getApps()[0];
 	}
-} else {
-	adminApp = getApps()[0];
+} catch (e) {
+	console.error("❌ ERROR CRÍTICO en Firebase Admin:", e.message);
+	throw e; // ¡Esto es clave! Hace que el error llegue a la API
 }
 
-const adminAuth = getAuth(adminApp);
-const adminDb = getFirestore(adminApp);
-
-export { adminAuth, adminDb };
+export const adminAuth = getAuth(app);
+export const adminDb = getFirestore(app);
