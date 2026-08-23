@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { adminAuth, adminDb } from "@/lib/firebase/admin";
-
+export const dynamic = 'force-dynamic';
 const COOKIE_NAME = "session";
 
 export default async function AdminLayout({ children }) {

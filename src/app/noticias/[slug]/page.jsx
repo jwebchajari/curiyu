@@ -3,7 +3,7 @@ import { getNewsBySlug } from "@/lib/firebase/news";
 import Image from "next/image";
 import Link from "next/link";
 import ShareButton from "@/components/news/ShareButton";
-
+export const dynamic = 'force-dynamic';
 // 🔥 Metadatos completos para SEO y Redes Sociales
 export async function generateMetadata({ params }) {
     // 🔥 CORRECCIÓN IMPORTANTE: Desenvolver la Promesa de params con await

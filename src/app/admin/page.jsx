@@ -2,6 +2,8 @@
 import { getAllNews } from "@/lib/firebase/news";
 import NewsList from "@/components/admin/NewsList";
 import AdminTabs from "@/components/admin/AdminTabs";
+export const dynamic = 'force-dynamic';
+
 
 const tabs = [
     { slug: "listar", label: "📋 Listar" },
