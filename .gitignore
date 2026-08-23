@@ -19,7 +19,8 @@
 # Next.js
 .next/
 out/
-
+# service-account-key.json
+service-account-key.json
 # production
 /build
 

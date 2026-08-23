@@ -26,11 +26,10 @@ export default function AdminSidebar() {
                     <Link
                         key={item.href}
                         href={item.href}
-                        className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
-                            pathname === item.href || pathname.startsWith(item.href + "/")
-                                ? "bg-verde text-white"
-                                : "text-gray-700 hover:bg-verde-suave hover:text-verde"
-                        }`}
+                        className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${pathname === item.href || pathname.startsWith(item.href + "/")
+                            ? "bg-verde text-white"
+                            : "text-gray-700 hover:bg-verde-suave hover:text-verde"
+                            }`}
                     >
                         <span>{item.icon}</span>
                         <span>{item.label}</span>

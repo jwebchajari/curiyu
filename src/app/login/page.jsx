@@ -3,140 +3,136 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/hooks/useAuth";
-import { auth, db } from "@/lib/firebase/client";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase/config";
 import Image from "next/image";
 
 export default function LoginPage() {
+    const router = useRouter();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const { signIn } = useAuth();
-    const router = useRouter();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
         setError("");
-        setIsSubmitting(true);
 
         try {
-            await signIn(email, password);
-            const currentUser = auth.currentUser;
-            if (!currentUser) throw new Error("Usuario no autenticado");
+            console.log("🔄 Iniciando login para:", email);
 
-            const userRef = doc(db, "users", currentUser.uid);
-            const userSnap = await getDoc(userRef);
+            // 1. Autenticar con Firebase Auth
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            console.log("✅ Usuario autenticado:", userCredential.user.uid);
 
-            if (!userSnap.exists()) {
-                await setDoc(userRef, {
-                    email: currentUser.email,
-                    name: currentUser.displayName || "Usuario",
-                    active: true,
-                    roles: ["SUPER_ROOT"],
-                    createdAt: new Date().toISOString(),
-                });
-                console.log("✅ Documento creado para UID:", currentUser.uid);
-            }
+            const idToken = await userCredential.user.getIdToken();
+            console.log("✅ Token ID obtenido");
 
-            const idToken = await currentUser.getIdToken();
-            const res = await fetch("/api/session", {
+            // 2. Crear cookie de sesión
+            console.log("🔄 Creando sesión...");
+            const response = await fetch("/api/session", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                },
                 body: JSON.stringify({ idToken }),
             });
 
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
+            const data = await response.json();
+
+            if (!response.ok) {
+                console.error("❌ Error en /api/session:", data);
                 throw new Error(data.error || "Error al crear sesión");
             }
 
+            console.log("✅ Sesión creada exitosamente");
+
+            // 3. Redirigir al admin
             router.push("/admin");
-        } catch (err) {
-            console.error("❌ Error de login:", err);
-            const errorCode = err?.code;
-            if (
-                errorCode === "auth/user-not-found" ||
-                errorCode === "auth/wrong-password" ||
-                errorCode === "auth/invalid-credential"
-            ) {
-                setError("Email o contraseña incorrectos.");
-            } else if (err?.message?.includes("permissions")) {
-                setError("Error de permisos en Firestore. Revisá las reglas.");
-            } else {
-                setError("Ocurrió un error al iniciar sesión. Intentalo nuevamente.");
-            }
+            router.refresh();
+        } catch (error) {
+            console.error("❌ Error de login:", error);
+            setError(error.message || "Error al iniciar sesión");
         } finally {
-            setIsSubmitting(false);
+            setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-[calc(100vh-80px)] flex items-center justify-center py-12 px-4 bg-gradient-to-br from-gray-50 to-gray-100">
-            <div className="w-full max-w-md">
-                <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 transition-all hover:shadow-2xl">
-                    <div className="text-center mb-8">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-md w-full space-y-8">
+                <div>
+                    <div className="flex justify-center">
                         <Image
                             src="/logo.png"
-                            alt="Logo del Club Curiyú"
-                            width={180}
-                            height={90}
-                            className="mx-auto mb-4"
+                            alt="Curiyú Club"
+                            width={120}
+                            height={120}
+                            className="h-24 w-auto"
                             priority
                         />
-                        <h1 className="font-display text-3xl text-verde">Iniciar Sesión</h1>
-                        <p className="text-sm text-gray-500 mt-1">
-                            Ingresá para acceder al panel de administración
-                        </p>
                     </div>
+                    <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                        Iniciar Sesión
+                    </h2>
+                    <p className="mt-2 text-center text-sm text-gray-600">
+                        Ingresá para acceder al panel de administración
+                    </p>
+                </div>
 
-                    {error && (
-                        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                            {error}
-                        </div>
-                    )}
+                {error && (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+                        <strong>Error:</strong> {error}
+                    </div>
+                )}
 
-                    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+                    <div className="rounded-md shadow-sm -space-y-px">
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="email" className="sr-only">
                                 Email
                             </label>
                             <input
                                 id="email"
+                                name="email"
                                 type="email"
+                                autoComplete="email"
+                                required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                required
-                                autoComplete="email"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde focus:border-transparent transition"
-                                placeholder="tu@email.com"
+                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-verde focus:border-verde focus:z-10 sm:text-sm"
+                                placeholder="Email"
                             />
                         </div>
                         <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="password" className="sr-only">
                                 Contraseña
                             </label>
                             <input
                                 id="password"
+                                name="password"
                                 type="password"
+                                autoComplete="current-password"
+                                required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                required
-                                autoComplete="current-password"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde focus:border-transparent transition"
-                                placeholder="••••••••"
+                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-verde focus:border-verde focus:z-10 sm:text-sm"
+                                placeholder="Contraseña"
                             />
                         </div>
+                    </div>
+
+                    <div>
                         <button
                             type="submit"
-                            disabled={isSubmitting}
-                            className="w-full bg-verde text-white font-semibold py-2.5 rounded-full hover:bg-verde-oscuro transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+                            disabled={loading}
+                            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-verde hover:bg-verde-oscuro focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-verde disabled:opacity-50"
                         >
-                            {isSubmitting ? "Ingresando..." : "Ingresar"}
+                            {loading ? "Iniciando sesión..." : "Ingresar"}
                         </button>
-                    </form>
-                </div>
+                    </div>
+                </form>
             </div>
         </div>
     );

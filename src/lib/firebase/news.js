@@ -1,93 +1,84 @@
 // src/lib/firebase/news.js
-import { db } from "./client";
+import { db } from "./config";
 import {
-  collection,
-  getDocs,
-  getDoc,
-  doc,
-  query,
-  orderBy,
-  where,
-  limit,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  serverTimestamp,
+	collection,
+	addDoc,
+	getDocs,
+	getDoc,
+	doc,
+	updateDoc,
+	deleteDoc,
+	query,
+	orderBy,
+	Timestamp,
 } from "firebase/firestore";
 
-const NEWS_COLLECTION = "news";
+const COLLECTION = "news";
 
-export async function getAllNews() {
-  try {
-    const q = query(collection(db, NEWS_COLLECTION), orderBy("publishedAt", "desc"));
-    const querySnapshot = await getDocs(q);
-    const news = [];
-    querySnapshot.forEach((doc) => {
-      news.push({ id: doc.id, ...doc.data() });
-    });
-    return news;
-  } catch (error) {
-    console.error("Error al obtener noticias:", error);
-    return [];
-  }
+export async function createNews(data) {
+	try {
+		const docRef = await addDoc(collection(db, COLLECTION), {
+			...data,
+			publishedAt: Timestamp.now(),
+			updatedAt: Timestamp.now(),
+		});
+		return { id: docRef.id, ...data };
+	} catch (error) {
+		console.error("Error al crear noticia:", error);
+		throw error;
+	}
 }
 
-export async function getNewsBySlug(slug) {
-  try {
-    const q = query(collection(db, NEWS_COLLECTION), where("slug", "==", slug), limit(1));
-    const querySnapshot = await getDocs(q);
-    if (querySnapshot.empty) return null;
-    const docSnap = querySnapshot.docs[0];
-    return { id: docSnap.id, ...docSnap.data() };
-  } catch (error) {
-    console.error("Error al obtener noticia por slug:", error);
-    return null;
-  }
+export async function getAllNews() {
+	try {
+		const q = query(
+			collection(db, COLLECTION),
+			orderBy("publishedAt", "desc"),
+		);
+		const snapshot = await getDocs(q);
+		return snapshot.docs.map((doc) => ({
+			id: doc.id,
+			...doc.data(),
+		}));
+	} catch (error) {
+		console.error("Error al obtener noticias:", error);
+		return [];
+	}
 }
 
 export async function getNewsById(id) {
-  try {
-    const docRef = doc(db, NEWS_COLLECTION, id);
-    const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) return null;
-    return { id: docSnap.id, ...docSnap.data() };
-  } catch (error) {
-    console.error("Error al obtener noticia por ID:", error);
-    return null;
-  }
-}
-
-export async function createNews(data) {
-  try {
-    const docRef = await addDoc(collection(db, NEWS_COLLECTION), {
-      ...data,
-      publishedAt: serverTimestamp(),
-    });
-    return { id: docRef.id };
-  } catch (error) {
-    console.error("Error al crear noticia:", error);
-    throw error;
-  }
+	try {
+		const docRef = doc(db, COLLECTION, id);
+		const docSnap = await getDoc(docRef);
+		if (!docSnap.exists()) return null;
+		return { id: docSnap.id, ...docSnap.data() };
+	} catch (error) {
+		console.error("Error al obtener noticia:", error);
+		return null;
+	}
 }
 
 export async function updateNews(id, data) {
-  try {
-    const docRef = doc(db, NEWS_COLLECTION, id);
-    await updateDoc(docRef, data);
-    return { success: true };
-  } catch (error) {
-    console.error("Error al actualizar noticia:", error);
-    throw error;
-  }
+	try {
+		const docRef = doc(db, COLLECTION, id);
+		await updateDoc(docRef, {
+			...data,
+			updatedAt: Timestamp.now(),
+		});
+		return { id, ...data };
+	} catch (error) {
+		console.error("Error al actualizar noticia:", error);
+		throw error;
+	}
 }
 
 export async function deleteNews(id) {
-  try {
-    const docRef = doc(db, NEWS_COLLECTION, id);
-    await deleteDoc(docRef);
-    return { success: true };
-  } catch (error) {
-    console.error("Error al eliminar noticia:", error);
-    throw error;
-  }
+	try {
+		const docRef = doc(db, COLLECTION, id);
+		await deleteDoc(docRef);
+		return true;
+	} catch (error) {
+		console.error("Error al eliminar noticia:", error);
+		throw error;
+	}
 }
