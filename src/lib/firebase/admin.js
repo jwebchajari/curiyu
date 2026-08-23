@@ -3,49 +3,38 @@ import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 
-// Función para obtener las credenciales SOLO desde variables de entorno
 function getCredentials() {
 	const projectId = process.env.FIREBASE_PROJECT_ID;
 	const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-
-	// 🔥 IMPORTANTE: Limpiamos la clave privada por si Vercel le agregó comillas o \n literales
-	const privateKey = process.env.FIREBASE_PRIVATE_KEY
-		? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n").replace(
-				/^"|"$/g,
-				"",
-			)
-		: undefined;
+	const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
 	if (!projectId || !clientEmail || !privateKey) {
 		throw new Error(
-			"Faltan variables de entorno de Firebase Admin (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY)",
+			"Faltan variables de entorno: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY",
 		);
 	}
 
-	console.log("✅ Credenciales cargadas desde variables de entorno");
-	return cert({
-		projectId,
-		clientEmail,
-		privateKey,
-	});
+	// Limpieza total de la clave privada (quita comillas, convierte \n a salto real, quita espacios sobrantes)
+	const cleanedPrivateKey = privateKey
+		.replace(/\\n/g, "\n")
+		.replace(/^"|"$/g, "") // Quita comillas dobles al inicio y final
+		.replace(/^'|'$/g, "") // Quita comillas simples al inicio y final
+		.trim();
+
+	return cert({ projectId, clientEmail, privateKey: cleanedPrivateKey });
 }
 
-const apps = getApps();
 let adminApp;
-
-if (!apps.length) {
+if (!getApps().length) {
 	try {
-		const credential = getCredentials();
-		adminApp = initializeApp({
-			credential,
-		});
+		adminApp = initializeApp({ credential: getCredentials() });
 		console.log("✅ Firebase Admin inicializado correctamente");
 	} catch (error) {
 		console.error("❌ Error al inicializar Firebase Admin:", error);
-		// No lanzamos el error para que el servidor no explote, pero sí logueamos
+		throw error; // Esto hará que la API devuelva un error claro
 	}
 } else {
-	adminApp = apps[0];
+	adminApp = getApps()[0];
 }
 
 const adminAuth = getAuth(adminApp);

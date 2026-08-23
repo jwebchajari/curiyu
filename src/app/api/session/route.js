@@ -2,11 +2,21 @@
 import { NextResponse } from "next/server";
 import { adminAuth } from "@/lib/firebase/admin";
 
+export const dynamic = "force-dynamic"; // 🔥 IMPORTANTE: Fuerza a que la API se ejecute en cada petición
+
 export async function POST(request) {
 	try {
-		// Lee el JSON del cuerpo
-		const body = await request.json();
-		const idToken = body?.idToken;
+		// Verificamos si el body viene vacío o mal formado
+		let idToken;
+		try {
+			const body = await request.json();
+			idToken = body?.idToken;
+		} catch (jsonError) {
+			return NextResponse.json(
+				{ error: "El cuerpo de la petición no es un JSON válido" },
+				{ status: 400 },
+			);
+		}
 
 		if (!idToken) {
 			return NextResponse.json(
@@ -15,7 +25,7 @@ export async function POST(request) {
 			);
 		}
 
-		// Verifica el token y crea la cookie de sesión
+		// Crear la sesión
 		const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 días
 		const sessionCookie = await adminAuth.createSessionCookie(idToken, {
 			expiresIn,
@@ -24,7 +34,7 @@ export async function POST(request) {
 		const response = NextResponse.json({ status: "success" });
 		response.cookies.set("session", sessionCookie, {
 			httpOnly: true,
-			secure: true,
+			secure: true, // En producción (Vercel) siempre es true
 			sameSite: "lax",
 			maxAge: expiresIn,
 			path: "/",
@@ -32,10 +42,10 @@ export async function POST(request) {
 
 		return response;
 	} catch (error) {
-		// Si falla cualquier cosa, retorna un JSON de error para que no se rompa el cliente
+		// 🔥 Esto es lo que te va a decir exactamente qué falla:
 		console.error("Error en la API de sesión:", error);
 		return NextResponse.json(
-			{ error: "Error interno al iniciar sesión" },
+			{ error: error.message || "Error interno al iniciar sesión" },
 			{ status: 500 },
 		);
 	}
