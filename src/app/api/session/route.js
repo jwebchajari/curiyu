@@ -3,6 +3,8 @@ import { adminAuth } from "@/lib/firebase/admin";
 
 export const dynamic = "force-dynamic";
 
+export const runtime = "nodejs";
+
 export async function POST(request) {
 	try {
 		const { idToken } = await request.json();

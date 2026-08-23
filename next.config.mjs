@@ -8,6 +8,8 @@ const nextConfig = {
 			},
 		],
 	},
+	// 🔥 Esto arregla el error de ESM y CommonJS con Firebase Admin
+	serverExternalPackages: ["firebase-admin", "jwks-rsa"],
 };
 
 export default nextConfig;
