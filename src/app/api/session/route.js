@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { adminAuth } from "@/lib/firebase/admin";
 
-export const dynamic = "force-dynamic";
-
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(request) {
 	try {
@@ -31,7 +30,6 @@ export async function POST(request) {
 		return response;
 	} catch (error) {
 		console.error("❌ Error en /api/session:", error);
-		// IMPORTANTE: Devolver el mensaje de error real en el JSON
 		return NextResponse.json(
 			{ error: error.message || "Error interno" },
 			{ status: 500 },

@@ -1,4 +1,3 @@
-/** @type {import('next').NextConfig} */
 const nextConfig = {
 	images: {
 		remotePatterns: [
@@ -8,8 +7,9 @@ const nextConfig = {
 			},
 		],
 	},
-	// 🔥 Esto arregla el error de ESM y CommonJS con Firebase Admin
-	serverExternalPackages: ["firebase-admin", "jwks-rsa"],
+	experimental: {
+		serverComponentsExternalPackages: ["firebase-admin", "jwks-rsa"],
+	},
 };
 
 export default nextConfig;
