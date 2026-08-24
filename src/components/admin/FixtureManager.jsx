@@ -1,3 +1,4 @@
+//src/components/admin/FixtureManager.jsx
 "use client";
 
 import { useState, useMemo, useRef } from "react";
@@ -69,6 +70,7 @@ function MatchResultForm({ match }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [imageUrl, setImageUrl] = useState(match.imageUrl || "");
     const [uploadingImage, setUploadingImage] = useState(false);
+    const [imageError, setImageError] = useState("");
     const fileInputRef = useRef(null);
 
     const [homeTries, setHomeTries] = useState(match.homeTries || 0);
@@ -88,24 +90,39 @@ function MatchResultForm({ match }) {
         const file = e.target.files[0];
         if (!file) return;
         setUploadingImage(true);
+        setImageError("");
 
         const formData = new FormData();
         formData.append("file", file);
         formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET);
 
         try {
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`, {
+            const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+            const preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+            if (!cloudName || !preset) {
+                throw new Error("Faltan variables de entorno de Cloudinary");
+            }
+
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
                 method: "POST",
                 body: formData,
             });
+
             const data = await res.json();
-            if (data.secure_url) {
-                setImageUrl(data.secure_url);
+
+            if (data.secure_url && data.public_id) {
+                // Construir URL optimizada con transformaciones:
+                // - q_auto: calidad automática
+                // - f_auto: formato automático (WebP si el navegador lo soporta)
+                // - c_scale,w_800: redimensionar a 800px de ancho (se adapta al contenedor)
+                const optimizedUrl = `https://res.cloudinary.com/${cloudName}/image/upload/q_auto,f_auto,c_scale,w_800/${data.public_id}`;
+                setImageUrl(optimizedUrl);
             } else {
-                alert("Error al subir la imagen");
+                setImageError(data.error?.message || "Error al subir la imagen");
             }
         } catch (err) {
-            alert("Error al conectar con Cloudinary");
+            setImageError(err.message || "Error al conectar con Cloudinary");
         } finally {
             setUploadingImage(false);
         }
@@ -183,9 +200,9 @@ function MatchResultForm({ match }) {
                 </div>
             </div>
 
-            {/* Subida de Imagen */}
+            {/* Subida de Imagen con conversión a WebP */}
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">📸 Foto del Partido (opcional)</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">📸 Foto del Partido (opcional, se convertirá a WebP)</label>
                 <div className="flex items-center gap-4">
                     <button
                         type="button"
@@ -200,6 +217,7 @@ function MatchResultForm({ match }) {
                         <img src={imageUrl} alt="Foto del partido" className="h-16 w-24 object-cover rounded-lg border border-gray-200" />
                     )}
                 </div>
+                {imageError && <p className="mt-2 text-red-500 text-sm">{imageError}</p>}
             </div>
 
             <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 pt-2">
@@ -323,6 +341,18 @@ export default function FixtureManager({ matches }) {
     const handleDelete = (matchId) => { setMatchToDelete(matchId); setDeleteModalOpen(true); };
     const confirmDelete = async () => { if (!matchToDelete) return; setIsDeleting(true); try { await deleteMatchAction(matchToDelete); router.refresh(); setDeleteModalOpen(false); } catch (error) { setError("No se pudo eliminar el partido."); } finally { setIsDeleting(false); setMatchToDelete(null); } };
 
+    // ---------- Plantilla descargable ----------
+    const downloadTemplate = () => {
+        const templateData = [
+            { "Deporte (rugby/hockey)": "rugby", "Género": "Masculino", "Nivel": "Primera", "Equipo Local": "Curiyú", "Equipo Visitante": "Central", "Fecha (DD-MM-AAAA)": "15-03-2026" },
+            { "Deporte (rugby/hockey)": "hockey", "Género": "Femenino", "Nivel": "Juveniles", "Equipo Local": "Curiyú", "Equipo Visitante": "Rowing", "Fecha (DD-MM-AAAA)": "22-03-2026" }
+        ];
+        const ws = XLSX.utils.json_to_sheet(templateData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Plantilla");
+        XLSX.writeFile(wb, "plantilla_fixture.xlsx");
+    };
+
     const handleFileUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -363,7 +393,7 @@ export default function FixtureManager({ matches }) {
             <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-200">
                 <h3 className="font-bold text-lg sm:text-xl mb-4">📥 Carga Masiva por Excel</h3>
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center">
-                    <a href="/api/fixture/template" download className="w-full sm:w-auto inline-flex justify-center items-center bg-blue-600 text-white px-5 py-3 rounded-full text-sm sm:text-base font-bold hover:bg-blue-700 transition">⬇️ Descargar Plantilla</a>
+                    <button onClick={downloadTemplate} className="w-full sm:w-auto inline-flex justify-center items-center bg-blue-600 text-white px-5 py-3 rounded-full text-sm sm:text-base font-bold hover:bg-blue-700 transition">⬇️ Descargar Plantilla</button>
                     <span className="text-gray-400 hidden sm:inline">o</span>
                     <label className="w-full sm:w-auto inline-flex justify-center items-center bg-green-600 text-white px-5 py-3 rounded-full text-sm sm:text-base font-bold cursor-pointer hover:bg-green-700 transition">📤 Subir Torneo Completo<input type="file" accept=".xlsx, .xls" onChange={handleFileUpload} className="hidden" /></label>
                 </div>

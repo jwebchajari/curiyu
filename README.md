@@ -4,12 +4,12 @@ ESTRUCTURA DEL PROYECTO
 ========================
 src/
 ├── app/
-│   ├── layout.jsx                # Layout principal con metadata global (pendiente)
-│   ├── page.jsx                  # Home (pendiente)
+│   ├── layout.jsx                # Layout principal (pendiente)
+│   ├── page.jsx                  # Página de inicio (MEJORADA)
 │   ├── fixture/
-│   │   ├── page.jsx              # Página pública de fixture (solapas por deporte)
+│   │   ├── page.jsx              # Página pública de fixture
 │   │   └── [slug]/
-│   │       └── page.jsx          # Detalle de partido con metadatos dinámicos
+│   │       └── page.jsx          # Detalle de partido
 │   └── admin/
 │       └── fixture/
 │           └── page.jsx          # Gestión de fixture (admin)
@@ -19,45 +19,53 @@ src/
 │   │   └── FixtureManager.jsx    # CRUD de partidos (pendiente)
 │   ├── layout/
 │   │   └── PageHeader.jsx        # Encabezado de página
-│   └── fixture/
-│       ├── PublicFixture.jsx     # Contenedor de solapas y listas
-│       ├── MatchCard.jsx         # Tarjeta resumida, enlazada a detalle
-│       └── MatchDetail.jsx       # Detalle completo con compartir y estadísticas
+│   ├── fixture/
+│   │   ├── PublicFixture.jsx     # Contenedor de solapas y listas
+│   │   ├── MatchCard.jsx         # Tarjeta resumida
+│   │   └── MatchDetail.jsx       # Detalle completo
+│   └── layout/
+│       └── Footer.jsx            # Pie de página
 │
 ├── lib/
-│   └── firebase/
-│       └── admin.js              # Firebase Admin SDK
+│   ├── firebase/
+│   │   ├── admin.js              # Firebase Admin SDK
+│   │   └── news.js               # Funciones para noticias
+│
+└── public/
+    ├── logo2.png                 # Logo por defecto para partidos
+    └── foto-club.jpg             # Imagen de fondo del hero
 
 FUNCIONAMIENTO DE COMPONENTES CLAVE
 ====================================
-- src/app/fixture/page.jsx: lee query param `deporte` (rugby/hockey). Consulta Firestore por fecha y filtra por deporte en memoria (temporal). Idealmente debe usar índice compuesto y filtrar en query.
-- src/app/fixture/[slug]/page.jsx: obtiene partido por ID, genera metadatos dinámicos y renderiza MatchDetail.
-- src/components/fixture/PublicFixture.jsx: recibe `sport`, `played`, `upcoming`. Muestra solapas con Links, y secciones solo si hay datos.
-- src/components/fixture/MatchCard.jsx: tarjeta enlazada a `/fixture/[id]`. Muestra imagen, badge de deporte, marcador y "Ver más".
-- src/components/fixture/MatchDetail.jsx: componente cliente. Muestra imagen grande, marcador, estadísticas de tantos con puntos totales, explicación de puntos en acordeón cerrado (try penal = 8) y botón compartir.
-- src/app/admin/fixture/page.jsx: obtiene TODOS los partidos ordenados por fecha descendente y los pasa al manager.
+- app/page.jsx: página de inicio. Obtiene noticias y partidos. Muestra hero, últimas noticias,
+  últimos resultados (con resaltado de Curiyú y Victoria/Derrota/Empate), próximos partidos,
+  historia breve.
+- app/fixture/page.jsx: lista partidos con solapas por deporte. Consulta por fecha y filtra.
+- app/fixture/[slug]/page.jsx: detalle de partido con metadatos dinámicos.
+- components/fixture/MatchCard.jsx: tarjeta enlazada a detalle.
+- components/fixture/MatchDetail.jsx: detalle completo con estadísticas, acordeón de puntos y compartir.
+- lib/firebase/news.js: funciones para obtener noticias.
 
 BASE DE DATOS
 =============
-- Firestore (NoSQL), colección `matches`
-- Campos: sport, category, homeTeam, awayTeam, date, homeScore, awayScore, finished, imageUrl,
-  homeTries, awayTries, homeConversions, awayConversions, homePenalties, awayPenalties,
+- Firestore (NoSQL): colecciones `matches` y `news`.
+- Campos matches: sport, category, homeTeam, awayTeam, date, homeScore, awayScore, finished,
+  imageUrl, homeTries, awayTries, homeConversions, awayConversions, homePenalties, awayPenalties,
   homeTryPenalties, awayTryPenalties.
 
 ÍNDICES REQUERIDOS
 ==================
-- (sport ASC, date DESC) para últimos partidos
-- (sport ASC, date ASC) para próximos partidos
-(se pueden crear desde el enlace del error o consola Firebase)
+- Para consultas filtradas por sport + date (actualmente se evita en página home/admin usando
+  consulta solo por date). Si se implementan, crear índices (sport ASC, date DESC) y (sport ASC, date ASC).
 
 SEO IMPLEMENTADO
 ================
-- Metadata completa en /fixture y /fixture/[slug] (title, description, openGraph, twitter)
-- Página de detalle genera imagen personalizada para compartir.
+- Metadata en página de inicio, fixture y detalle.
+- Open Graph y Twitter Cards con imagen personalizada en detalle.
+- Falta: sitemap.xml, robots.txt, JSON-LD global.
 
 PENDIENTE
 =========
-- Crear índices compuestos en Firestore
-- Definir color primary en Tailwind
-- Completar SEO global (layout, sitemap, robots)
-- Página de inicio
+- Definir colores personalizados en Tailwind (verde, verde-claro, etc.) si no están.
+- Completar SEO global (layout, sitemap, robots).
+- Páginas de rugby y hockey.
