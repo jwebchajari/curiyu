@@ -1,8 +1,8 @@
 /**
  * Ruta: src/lib/cloudinary-client.js
  * Resumen: Utilidad para construir URLs optimizadas de Cloudinary en el cliente.
- * Lógica: Toma una URL o public_id y devuelve URL con transformaciones
- *         q_auto, f_auto, c_scale, w_800.
+ * Lógica: Toma una URL o public_id y devuelve URL con transformaciones q_auto, f_auto, c_scale, w_800.
+ *         Si la URL ya tiene transformaciones, las respeta. Si no es de Cloudinary, devuelve la original.
  * Debería: No exponer secretos; solo usa el cloud name público.
  */
 export function getOptimizedCloudinaryUrl(urlOrPublicId, width = 800) {
@@ -10,7 +10,13 @@ export function getOptimizedCloudinaryUrl(urlOrPublicId, width = 800) {
   if (!cloudName || !urlOrPublicId) return urlOrPublicId;
 
   let publicId = urlOrPublicId;
-  if (urlOrPublicId.startsWith("http")) {
+
+  // Si es una URL de Cloudinary, extraer public_id
+  if (urlOrPublicId.includes("res.cloudinary.com")) {
+    // Si ya contiene transformaciones (contiene q_auto, f_auto, etc.), devolver tal cual
+    if (urlOrPublicId.includes("q_auto") || urlOrPublicId.includes("f_auto")) {
+      return urlOrPublicId;
+    }
     const parts = urlOrPublicId.split("/image/upload/");
     if (parts.length < 2) return urlOrPublicId;
     publicId = parts[1].replace(/^v\d+\//, "");

@@ -3,7 +3,7 @@
  * Resumen: Página de detalle de un partido específico.
  * Lógica: Obtiene el partido por ID (slug) desde Firestore. En Next.js 15, `params` es
  *         una Promise, por lo que se usa `await params` para obtener el slug.
- *         Genera metadatos dinámicos para SEO. Renderiza toda la información.
+ *         Genera metadatos dinámicos para SEO, incluyendo imagen optimizada para compartir.
  * Debería: Mostrar todos los detalles del partido al hacer clic en "Ver más" desde la lista,
  *          y permitir compartir el enlace con imagen y título personalizados.
  */
@@ -11,6 +11,7 @@ import { adminDb } from "@/lib/firebase/admin";
 import MatchDetail from "@/components/fixture/MatchDetail";
 import PageHeader from "@/components/layout/PageHeader";
 import { notFound } from "next/navigation";
+import { getOptimizedUrlFromUrl } from "@/lib/cloudinary-server";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +44,29 @@ export async function generateMetadata({ params }) {
     const description = `Partido de ${sportLabel} en el Club Curiyú. ${
       match.finished ? `Resultado: ${match.homeScore} - ${match.awayScore}` : "Próximo partido"
     }`;
-    const imageUrl = match.imageUrl && match.imageUrl !== "" ? match.imageUrl : `${baseUrl}/logo2.png`;
+
+    // Determinar URL de imagen optimizada para compartir
+    let imageUrl;
+    if (match.imageUrl && match.imageUrl !== "") {
+      // Si es de Cloudinary, optimizar con transformación 1200x630
+      if (match.imageUrl.includes("res.cloudinary.com")) {
+        imageUrl = getOptimizedUrlFromUrl(match.imageUrl, {
+          width: 1200,
+          height: 630,
+          crop: "fill",
+          fetch_format: "auto",
+          quality: "auto",
+        });
+      } else {
+        // Si es otra URL, asegurar que sea absoluta
+        imageUrl = match.imageUrl.startsWith("http")
+          ? match.imageUrl
+          : `${baseUrl}${match.imageUrl}`;
+      }
+    } else {
+      // Fallback a logo
+      imageUrl = `${baseUrl}/logo2.png`;
+    }
 
     return {
       title,
@@ -53,7 +76,14 @@ export async function generateMetadata({ params }) {
         description,
         type: "article",
         url: `${baseUrl}/fixture/${match.id}`,
-        images: [{ url: imageUrl, width: 1200, height: 630, alt: title }],
+        images: [
+          {
+            url: imageUrl,
+            width: 1200,
+            height: 630,
+            alt: title,
+          },
+        ],
       },
       twitter: {
         card: "summary_large_image",

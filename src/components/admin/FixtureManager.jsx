@@ -218,9 +218,9 @@ function MatchResultForm({ match, onCancel }) {
                     {imageUrl && (
                         <div className="w-full sm:w-auto flex-1">
                             <img
-                                src={getOptimizedCloudinaryUrl(imageUrl, 800)}
+                                src={getOptimizedCloudinaryUrl(imageUrl, 400)}
                                 alt="Foto del partido"
-                                className="w-full sm:w-64 h-40 object-cover rounded-lg border border-gray-200"
+                                className="w-full sm:w-48 h-32 object-cover rounded-lg border border-gray-200"
                             />
                         </div>
                     )}
@@ -254,21 +254,21 @@ function MatchResultForm({ match, onCancel }) {
 // ---------- Fila de partido ----------
 function MatchRow({ match, isExpanded, onToggle, onDelete }) {
     const isFinished = match.finished;
-    const optimizedImage = match.imageUrl ? getOptimizedCloudinaryUrl(match.imageUrl, 800) : null;
+    const imageUrl = match.imageUrl || "/logo2.png"; // fallback a logo
+    const optimizedImage = getOptimizedCloudinaryUrl(imageUrl, 400); // ancho menor para miniaturas
 
     return (
         <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-gray-200">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-start gap-4 flex-1">
-                    {isFinished && optimizedImage && (
-                        <div className="flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden border border-gray-200">
-                            <img
-                                src={optimizedImage}
-                                alt={`${match.homeTeam} vs ${match.awayTeam}`}
-                                className="w-full h-full object-cover"
-                            />
-                        </div>
-                    )}
+                    {/* Miniatura de imagen SIEMPRE visible */}
+                    <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                        <img
+                            src={optimizedImage}
+                            alt={`${match.homeTeam} vs ${match.awayTeam}`}
+                            className="w-full h-full object-cover"
+                        />
+                    </div>
                     <div>
                         <h3 className="font-bold text-lg sm:text-xl">
                             {match.homeTeam} <span className="text-gray-400">vs</span> {match.awayTeam}
