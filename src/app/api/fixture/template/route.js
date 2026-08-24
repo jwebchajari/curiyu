@@ -3,13 +3,13 @@ import { NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 
 export async function GET() {
-	// Definir encabezados del Excel
+	// Definir encabezados del Excel (ahora con formato DD-MM-AAAA)
 	const headers = [
 		"Equipo Local",
 		"Equipo Visitante",
 		"Categoría",
 		"Deporte (rugby/hockey)",
-		"Fecha (AAAA-MM-DD)",
+		"Fecha (DD-MM-AAAA)", // 🔥 Cambio aquí
 	];
 
 	// Crear hoja de cálculo

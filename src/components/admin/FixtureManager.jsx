@@ -1,17 +1,46 @@
-// src/components/admin/FixtureManager.jsx
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import * as XLSX from "xlsx";
 import {
     createMatchAction,
     updateMatchResultAction,
     deleteMatchAction,
-    bulkCreateMatchesAction
+    bulkCreateMatchesAction,
 } from "@/app/admin/fixture/actions";
 
-// Sub-componente para el formulario interactivo de cada partido
+// ---------- Utilidad: parseo robusto de fechas de Excel ----------
+function parseExcelDate(value) {
+    if (!value) return new Date();
+
+    // Ya viene como Date (cuando usamos cellDates: true)
+    if (value instanceof Date && !isNaN(value.getTime())) return value;
+
+    // Número de serie de Excel (fallback si cellDates no aplicó)
+    if (typeof value === "number") {
+        const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+        return new Date(excelEpoch.getTime() + value * 86400000);
+    }
+
+    if (typeof value === "string") {
+        const trimmed = value.trim();
+        // DD-MM-AAAA o DD/MM/AAAA
+        const match = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+        if (match) {
+            const [, day, month, year] = match;
+            const d = new Date(Number(year), Number(month) - 1, Number(day));
+            if (!isNaN(d.getTime())) return d;
+        }
+        // Último intento: dejar que Date lo parsee solo (ISO, etc.)
+        const parsed = new Date(trimmed);
+        if (!isNaN(parsed.getTime())) return parsed;
+    }
+
+    return new Date();
+}
+
+// ---------- Sub-componente: formulario de resultado ----------
 function MatchResultForm({ match }) {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,7 +73,7 @@ function MatchResultForm({ match }) {
             awayPenalties,
             homeTryPenalties,
             awayTryPenalties,
-            finished: true
+            finished: true,
         });
 
         setIsSubmitting(false);
@@ -57,7 +86,6 @@ function MatchResultForm({ match }) {
     return (
         <form onSubmit={handleSubmit} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Columna Local */}
                 <div className="bg-white p-4 rounded-lg shadow-sm">
                     <h4 className="font-bold text-oscuro mb-3 text-lg text-center border-b pb-2">{match.homeTeam}</h4>
                     <div className="space-y-3">
@@ -84,7 +112,6 @@ function MatchResultForm({ match }) {
                     </div>
                 </div>
 
-                {/* Columna Visitante */}
                 <div className="bg-white p-4 rounded-lg shadow-sm">
                     <h4 className="font-bold text-oscuro mb-3 text-lg text-center border-b pb-2">{match.awayTeam}</h4>
                     <div className="space-y-3">
@@ -126,13 +153,107 @@ function MatchResultForm({ match }) {
     );
 }
 
+// ---------- Fila de partido ----------
+function MatchRow({ match, isExpanded, onToggle, onDelete }) {
+    const isFinished = match.finished;
+
+    return (
+        <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                <div>
+                    <h3 className="font-bold text-lg">
+                        {match.homeTeam} <span className="text-gray-400">vs</span> {match.awayTeam}
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                        📅 {new Date(match.date).toLocaleDateString("es-AR", { day: "numeric", month: "long", year: "numeric" })}
+                        {" · "}
+                        <span className="uppercase">{match.sport}</span> · {match.category}
+                    </p>
+                </div>
+
+                <div className="flex items-center gap-3 flex-wrap">
+                    {isFinished && (
+                        <span className="text-verde font-bold bg-verde/10 px-3 py-1 rounded-full text-sm">
+                            {match.homeScore} - {match.awayScore}
+                        </span>
+                    )}
+                    <button
+                        onClick={onToggle}
+                        className="text-blue-600 hover:underline text-sm font-medium"
+                    >
+                        {isExpanded ? "Ocultar" : isFinished ? "Ver / Editar" : "Cargar resultado"}
+                    </button>
+                    <button onClick={onDelete} className="text-red-600 text-sm hover:underline">
+                        Eliminar
+                    </button>
+                </div>
+            </div>
+
+            {isExpanded && (
+                <div className="mt-4">
+                    <MatchResultForm match={match} />
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ---------- Componente principal ----------
+const PAGE_SIZE = 15;
+
 export default function FixtureManager({ matches }) {
     const router = useRouter();
     const [error, setError] = useState("");
     const [expandedMatches, setExpandedMatches] = useState([]);
+    const [activeTab, setActiveTab] = useState("proximos"); // proximos | finalizados
+    const [search, setSearch] = useState("");
+    const [categoryFilter, setCategoryFilter] = useState("todas");
+    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+    const [showManualForm, setShowManualForm] = useState(false);
 
-    const sortedMatches = [...matches].sort((a, b) => new Date(a.date) - new Date(b.date));
-    const nextMatch = sortedMatches.find(m => !m.finished);
+    const categories = useMemo(() => {
+        const set = new Set(matches.map((m) => m.category).filter(Boolean));
+        return ["todas", ...Array.from(set)];
+    }, [matches]);
+
+    const proximos = useMemo(
+        () =>
+            matches
+                .filter((m) => !m.finished)
+                .sort((a, b) => new Date(a.date) - new Date(b.date)),
+        [matches]
+    );
+
+    const finalizados = useMemo(
+        () =>
+            matches
+                .filter((m) => m.finished)
+                .sort((a, b) => new Date(b.date) - new Date(a.date)),
+        [matches]
+    );
+
+    const baseList = activeTab === "proximos" ? proximos : finalizados;
+
+    const filteredList = useMemo(() => {
+        return baseList.filter((m) => {
+            const matchesCategory = categoryFilter === "todas" || m.category === categoryFilter;
+            const term = search.trim().toLowerCase();
+            const matchesSearch =
+                !term ||
+                m.homeTeam?.toLowerCase().includes(term) ||
+                m.awayTeam?.toLowerCase().includes(term);
+            return matchesCategory && matchesSearch;
+        });
+    }, [baseList, categoryFilter, search]);
+
+    const visibleList = filteredList.slice(0, visibleCount);
+    const nextMatch = proximos[0];
+
+    const handleTabChange = (tab) => {
+        setActiveTab(tab);
+        setVisibleCount(PAGE_SIZE);
+        setExpandedMatches([]);
+    };
 
     const handleCreate = async (formData) => {
         const res = await createMatchAction(formData);
@@ -154,18 +275,22 @@ export default function FixtureManager({ matches }) {
         const reader = new FileReader();
         reader.onload = async (event) => {
             const data = new Uint8Array(event.target.result);
-            const workbook = XLSX.read(data, { type: "array" });
+            // cellDates: true → las celdas de fecha vienen como Date en vez de número de serie
+            const workbook = XLSX.read(data, { type: "array", cellDates: true });
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
             const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-            const matchesArray = jsonData.map(row => ({
-                homeTeam: row["Equipo Local"],
-                awayTeam: row["Equipo Visitante"],
-                category: row["Categoría"] || "General",
-                sport: row["Deporte (rugby/hockey)"]?.toLowerCase() || "rugby",
-                date: row["Fecha (AAAA-MM-DD)"]
-            }));
+            const matchesArray = jsonData.map((row) => {
+                const rawDate = row["Fecha (DD-MM-AAAA)"];
+                return {
+                    homeTeam: row["Equipo Local"],
+                    awayTeam: row["Equipo Visitante"],
+                    category: row["Categoría"] || "General",
+                    sport: row["Deporte (rugby/hockey)"]?.toLowerCase() || "rugby",
+                    date: parseExcelDate(rawDate),
+                };
+            });
 
             const res = await bulkCreateMatchesAction(matchesArray);
             if (res?.success) {
@@ -180,13 +305,19 @@ export default function FixtureManager({ matches }) {
     };
 
     const toggleExpand = (matchId) => {
-        setExpandedMatches(prev =>
-            prev.includes(matchId) ? prev.filter(id => id !== matchId) : [...prev, matchId]
+        setExpandedMatches((prev) =>
+            prev.includes(matchId) ? prev.filter((id) => id !== matchId) : [...prev, matchId]
         );
     };
 
+    const tabButtonClass = (tab) =>
+        `px-5 py-2.5 rounded-full text-sm font-bold transition ${activeTab === tab
+            ? "bg-verde text-white shadow"
+            : "bg-white text-gray-600 border border-gray-300 hover:bg-gray-50"
+        }`;
+
     return (
-        <div className="space-y-8">
+        <div className="space-y-6">
             {/* Zona de Subida de Excel */}
             <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
                 <h3 className="font-bold text-lg mb-3">📥 Carga Masiva por Excel</h3>
@@ -200,21 +331,37 @@ export default function FixtureManager({ matches }) {
                         <input type="file" accept=".xlsx, .xls" onChange={handleFileUpload} className="hidden" />
                     </label>
                 </div>
+                <p className="text-xs text-gray-400 mt-2">
+                    La columna de fecha acepta formato DD-MM-AAAA (ej: 25-08-2026).
+                </p>
             </div>
 
-            {/* Formulario manual */}
-            <form action={handleCreate} className="bg-white p-6 rounded-lg shadow-md grid grid-cols-1 md:grid-cols-5 gap-4">
-                <input name="homeTeam" placeholder="Equipo Local" required className="border border-gray-300 rounded-lg px-3 py-2" />
-                <input name="awayTeam" placeholder="Equipo Visitante" required className="border border-gray-300 rounded-lg px-3 py-2" />
-                <input name="category" placeholder="Categoría" className="border border-gray-300 rounded-lg px-3 py-2" />
-                <input name="date" type="date" required className="border border-gray-300 rounded-lg px-3 py-2" />
-                <select name="sport" className="border border-gray-300 rounded-lg px-3 py-2">
-                    <option value="rugby">Rugby</option>
-                    <option value="hockey">Hockey</option>
-                </select>
-                <button type="submit" className="bg-verde text-white px-4 py-2 rounded-full col-span-5">+ Crear Partido</button>
-                {error && <p className="text-red-500 col-span-5">{error}</p>}
-            </form>
+            {/* Formulario manual (colapsable) */}
+            <div className="bg-white rounded-lg shadow-md border border-gray-200">
+                <button
+                    onClick={() => setShowManualForm((v) => !v)}
+                    className="w-full text-left px-6 py-4 font-bold flex justify-between items-center"
+                >
+                    <span>+ Cargar partido manual</span>
+                    <span className="text-gray-400">{showManualForm ? "▲" : "▼"}</span>
+                </button>
+                {showManualForm && (
+                    <form action={handleCreate} className="p-6 pt-0 grid grid-cols-1 md:grid-cols-5 gap-4">
+                        <input name="homeTeam" placeholder="Equipo Local" required className="border border-gray-300 rounded-lg px-3 py-2" />
+                        <input name="awayTeam" placeholder="Equipo Visitante" required className="border border-gray-300 rounded-lg px-3 py-2" />
+                        <input name="category" placeholder="Categoría" className="border border-gray-300 rounded-lg px-3 py-2" />
+                        <input name="date" type="date" required className="border border-gray-300 rounded-lg px-3 py-2" />
+                        <select name="sport" className="border border-gray-300 rounded-lg px-3 py-2">
+                            <option value="rugby">Rugby</option>
+                            <option value="hockey">Hockey</option>
+                        </select>
+                        <button type="submit" className="bg-verde text-white px-4 py-2 rounded-full col-span-1 md:col-span-5">
+                            + Crear Partido
+                        </button>
+                        {error && <p className="text-red-500 col-span-1 md:col-span-5">{error}</p>}
+                    </form>
+                )}
+            </div>
 
             {/* Próximo Partido Destacado */}
             {nextMatch && (
@@ -224,55 +371,76 @@ export default function FixtureManager({ matches }) {
                         {nextMatch.homeTeam} <span className="text-verde-claro">vs</span> {nextMatch.awayTeam}
                     </p>
                     <p className="text-sm opacity-90 mt-1">
-                        📅 {new Date(nextMatch.date).toLocaleDateString("es-AR", { weekday: 'long', day: 'numeric', month: 'long' })}
+                        📅 {new Date(nextMatch.date).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}
                         {" "}· {nextMatch.category} · {nextMatch.sport}
                     </p>
                 </div>
             )}
 
-            {/* Lista de Partidos (Ocultos si están finalizados) */}
-            <div className="space-y-4">
-                {sortedMatches.map(match => {
-                    const isFinished = match.finished;
-                    const isExpanded = expandedMatches.includes(match.id);
-
-                    return (
-                        <div key={match.id} className="bg-white p-4 rounded-lg shadow border border-gray-200">
-                            <div className="flex justify-between items-center">
-                                <div>
-                                    <h3 className="font-bold text-lg">
-                                        {match.homeTeam} <span className="text-gray-400">vs</span> {match.awayTeam}
-                                    </h3>
-                                    <p className="text-xs text-gray-500">
-                                        {new Date(match.date).toLocaleDateString("es-AR")} · {match.category}
-                                    </p>
-                                </div>
-
-                                {isFinished ? (
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-verde font-bold">Final: {match.homeScore} - {match.awayScore}</span>
-                                        <button
-                                            onClick={() => toggleExpand(match.id)}
-                                            className="text-blue-600 hover:underline text-sm font-medium"
-                                        >
-                                            {isExpanded ? "Ocultar" : "Ver más"}
-                                        </button>
-                                        <button onClick={() => handleDelete(match.id)} className="text-red-600 text-sm">Eliminar</button>
-                                    </div>
-                                ) : (
-                                    <button onClick={() => handleDelete(match.id)} className="text-red-600 text-sm">Eliminar</button>
-                                )}
-                            </div>
-
-                            {(!isFinished || isExpanded) && (
-                                <div className="mt-4">
-                                    <MatchResultForm match={match} />
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
+            {/* Solapas */}
+            <div className="flex gap-3 flex-wrap">
+                <button onClick={() => handleTabChange("proximos")} className={tabButtonClass("proximos")}>
+                    Próximos ({proximos.length})
+                </button>
+                <button onClick={() => handleTabChange("finalizados")} className={tabButtonClass("finalizados")}>
+                    Finalizados ({finalizados.length})
+                </button>
             </div>
+
+            {/* Buscador y filtro */}
+            <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                    type="text"
+                    placeholder="Buscar por equipo..."
+                    value={search}
+                    onChange={(e) => {
+                        setSearch(e.target.value);
+                        setVisibleCount(PAGE_SIZE);
+                    }}
+                    className="border border-gray-300 rounded-lg px-3 py-2 flex-1"
+                />
+                <select
+                    value={categoryFilter}
+                    onChange={(e) => {
+                        setCategoryFilter(e.target.value);
+                        setVisibleCount(PAGE_SIZE);
+                    }}
+                    className="border border-gray-300 rounded-lg px-3 py-2"
+                >
+                    {categories.map((cat) => (
+                        <option key={cat} value={cat}>
+                            {cat === "todas" ? "Todas las categorías" : cat}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+            {/* Lista de Partidos */}
+            <div className="space-y-4">
+                {visibleList.length === 0 && (
+                    <p className="text-gray-500 text-center py-8">No hay partidos que coincidan con la búsqueda.</p>
+                )}
+                {visibleList.map((match) => (
+                    <MatchRow
+                        key={match.id}
+                        match={match}
+                        isExpanded={expandedMatches.includes(match.id)}
+                        onToggle={() => toggleExpand(match.id)}
+                        onDelete={() => handleDelete(match.id)}
+                    />
+                ))}
+            </div>
+
+            {visibleCount < filteredList.length && (
+                <div className="text-center">
+                    <button
+                        onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
+                        className="bg-white border border-gray-300 px-6 py-2 rounded-full font-bold hover:bg-gray-50"
+                    >
+                        Cargar más ({filteredList.length - visibleCount} restantes)
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
