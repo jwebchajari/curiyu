@@ -1,7 +1,6 @@
-// src/components/admin/FixtureManager.jsx
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import * as XLSX from "xlsx";
 import ConfirmModal from "@/components/admin/ConfirmModal";
@@ -44,7 +43,6 @@ function parseExcelDate(value) {
     return new Date();
 }
 
-// Inferir género y nivel a partir de category (para datos viejos)
 function inferGenderAndLevel(match) {
     let gender = match.gender;
     let level = match.level;
@@ -69,6 +67,9 @@ function inferGenderAndLevel(match) {
 function MatchResultForm({ match }) {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [imageUrl, setImageUrl] = useState(match.imageUrl || "");
+    const [uploadingImage, setUploadingImage] = useState(false);
+    const fileInputRef = useRef(null);
 
     const [homeTries, setHomeTries] = useState(match.homeTries || 0);
     const [homeConversions, setHomeConversions] = useState(match.homeConversions || 0);
@@ -82,6 +83,33 @@ function MatchResultForm({ match }) {
 
     const homeScore = (homeTries * 5) + (homeConversions * 2) + (homePenalties * 3) + (homeTryPenalties * 8);
     const awayScore = (awayTries * 5) + (awayConversions * 2) + (awayPenalties * 3) + (awayTryPenalties * 8);
+
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setUploadingImage(true);
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET);
+
+        try {
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`, {
+                method: "POST",
+                body: formData,
+            });
+            const data = await res.json();
+            if (data.secure_url) {
+                setImageUrl(data.secure_url);
+            } else {
+                alert("Error al subir la imagen");
+            }
+        } catch (err) {
+            alert("Error al conectar con Cloudinary");
+        } finally {
+            setUploadingImage(false);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -97,6 +125,7 @@ function MatchResultForm({ match }) {
             awayPenalties,
             homeTryPenalties,
             awayTryPenalties,
+            imageUrl,
             finished: true,
         });
         setIsSubmitting(false);
@@ -111,9 +140,7 @@ function MatchResultForm({ match }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Local */}
                 <div className="bg-white p-4 sm:p-5 rounded-lg shadow-sm">
-                    <h4 className="font-bold text-oscuro mb-4 text-lg sm:text-xl text-center border-b pb-2">
-                        {match.homeTeam}
-                    </h4>
+                    <h4 className="font-bold text-oscuro mb-4 text-lg sm:text-xl text-center border-b pb-2">{match.homeTeam}</h4>
                     <div className="space-y-4">
                         {[
                             { label: "Tries (5 pts)", value: homeTries, setter: setHomeTries },
@@ -123,13 +150,7 @@ function MatchResultForm({ match }) {
                         ].map((item, idx) => (
                             <div key={idx} className="flex flex-col gap-1">
                                 <label className="text-sm font-medium text-gray-600">{item.label}</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={item.value}
-                                    onChange={(e) => item.setter(parseInt(e.target.value) || 0)}
-                                    className={inputClass}
-                                />
+                                <input type="number" min="0" value={item.value} onChange={(e) => item.setter(parseInt(e.target.value) || 0)} className={inputClass} />
                             </div>
                         ))}
                         <div className="mt-4 pt-4 border-t border-gray-200 text-center">
@@ -141,9 +162,7 @@ function MatchResultForm({ match }) {
 
                 {/* Visitante */}
                 <div className="bg-white p-4 sm:p-5 rounded-lg shadow-sm">
-                    <h4 className="font-bold text-oscuro mb-4 text-lg sm:text-xl text-center border-b pb-2">
-                        {match.awayTeam}
-                    </h4>
+                    <h4 className="font-bold text-oscuro mb-4 text-lg sm:text-xl text-center border-b pb-2">{match.awayTeam}</h4>
                     <div className="space-y-4">
                         {[
                             { label: "Tries (5 pts)", value: awayTries, setter: setAwayTries },
@@ -153,13 +172,7 @@ function MatchResultForm({ match }) {
                         ].map((item, idx) => (
                             <div key={idx} className="flex flex-col gap-1">
                                 <label className="text-sm font-medium text-gray-600">{item.label}</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={item.value}
-                                    onChange={(e) => item.setter(parseInt(e.target.value) || 0)}
-                                    className={inputClass}
-                                />
+                                <input type="number" min="0" value={item.value} onChange={(e) => item.setter(parseInt(e.target.value) || 0)} className={inputClass} />
                             </div>
                         ))}
                         <div className="mt-4 pt-4 border-t border-gray-200 text-center">
@@ -170,15 +183,28 @@ function MatchResultForm({ match }) {
                 </div>
             </div>
 
+            {/* Subida de Imagen */}
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">📸 Foto del Partido (opcional)</label>
+                <div className="flex items-center gap-4">
+                    <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploadingImage}
+                        className="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-100 transition"
+                    >
+                        {uploadingImage ? "Subiendo..." : "Subir imagen"}
+                    </button>
+                    <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={handleImageUpload} />
+                    {imageUrl && (
+                        <img src={imageUrl} alt="Foto del partido" className="h-16 w-24 object-cover rounded-lg border border-gray-200" />
+                    )}
+                </div>
+            </div>
+
             <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 pt-2">
-                <p className="text-xs sm:text-sm text-gray-500 text-center sm:text-left">
-                    El partido se marcará como finalizado al guardar.
-                </p>
-                <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full sm:w-auto bg-verde text-white px-6 sm:px-8 py-3 rounded-full font-bold shadow-lg hover:bg-verde-oscuro transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
-                >
+                <p className="text-xs sm:text-sm text-gray-500 text-center sm:text-left">El partido se marcará como finalizado al guardar.</p>
+                <button type="submit" disabled={isSubmitting || uploadingImage} className="w-full sm:w-auto bg-verde text-white px-6 sm:px-8 py-3 rounded-full font-bold shadow-lg hover:bg-verde-oscuro transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">
                     {isSubmitting ? "Guardando..." : "Guardar Resultado Final"}
                 </button>
             </div>
@@ -199,8 +225,7 @@ function MatchRow({ match, isExpanded, onToggle, onDelete }) {
                     </h3>
                     <p className="text-xs sm:text-sm text-gray-500 mt-1">
                         📅 {new Date(match.date).toLocaleDateString("es-AR", { day: "numeric", month: "long", year: "numeric" })}
-                        {" · "}
-                        <span className="uppercase">{match.sport}</span> · {match.gender} · {match.level}
+                        {" · "}<span className="uppercase">{match.sport}</span> · {match.gender} · {match.level}
                     </p>
                 </div>
 
@@ -210,16 +235,10 @@ function MatchRow({ match, isExpanded, onToggle, onDelete }) {
                             {match.homeScore} - {match.awayScore}
                         </span>
                     )}
-                    <button
-                        onClick={onToggle}
-                        className="px-3 py-2 sm:px-4 sm:py-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition text-sm font-medium"
-                    >
+                    <button onClick={onToggle} className="px-3 py-2 sm:px-4 sm:py-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition text-sm font-medium">
                         {isExpanded ? "Ocultar" : isFinished ? "Ver / Editar" : "Cargar resultado"}
                     </button>
-                    <button
-                        onClick={onDelete}
-                        className="px-3 py-2 sm:px-4 sm:py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition text-sm font-medium"
-                    >
+                    <button onClick={onDelete} className="px-3 py-2 sm:px-4 sm:py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition text-sm font-medium">
                         Eliminar
                     </button>
                 </div>
@@ -246,17 +265,14 @@ export default function FixtureManager({ matches }) {
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
     const [showManualForm, setShowManualForm] = useState(false);
 
-    // Filtros jerárquicos
     const [sportFilter, setSportFilter] = useState("todos");
     const [genderFilter, setGenderFilter] = useState("todos");
     const [levelFilter, setLevelFilter] = useState("todos");
 
-    // Modal de eliminación
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [matchToDelete, setMatchToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
-    // Normalizar matches con gender/level inferidos
     const normalizedMatches = useMemo(() => {
         return matches.map((m) => {
             const { gender, level } = inferGenderAndLevel(m);
@@ -264,7 +280,6 @@ export default function FixtureManager({ matches }) {
         });
     }, [matches]);
 
-    // Opciones para filtros
     const sports = useMemo(() => {
         const set = new Set(normalizedMatches.map((m) => m.sport).filter(Boolean));
         return ["todos", ...Array.from(set)];
@@ -280,15 +295,8 @@ export default function FixtureManager({ matches }) {
         return ["todos", ...Array.from(set)];
     }, [normalizedMatches]);
 
-    const proximos = useMemo(
-        () => normalizedMatches.filter((m) => !m.finished).sort((a, b) => new Date(a.date) - new Date(b.date)),
-        [normalizedMatches]
-    );
-
-    const finalizados = useMemo(
-        () => normalizedMatches.filter((m) => m.finished).sort((a, b) => new Date(b.date) - new Date(a.date)),
-        [normalizedMatches]
-    );
+    const proximos = useMemo(() => normalizedMatches.filter((m) => !m.finished).sort((a, b) => new Date(a.date) - new Date(b.date)), [normalizedMatches]);
+    const finalizados = useMemo(() => normalizedMatches.filter((m) => m.finished).sort((a, b) => new Date(b.date) - new Date(a.date)), [normalizedMatches]);
 
     const baseList = activeTab === "proximos" ? proximos : finalizados;
 
@@ -298,58 +306,26 @@ export default function FixtureManager({ matches }) {
             const matchesGender = genderFilter === "todos" || m.gender === genderFilter;
             const matchesLevel = levelFilter === "todos" || m.level === levelFilter;
             const term = search.trim().toLowerCase();
-            const matchesSearch =
-                !term || m.homeTeam?.toLowerCase().includes(term) || m.awayTeam?.toLowerCase().includes(term);
+            const matchesSearch = !term || m.homeTeam?.toLowerCase().includes(term) || m.awayTeam?.toLowerCase().includes(term);
             return matchesSport && matchesGender && matchesLevel && matchesSearch;
         });
     }, [baseList, sportFilter, genderFilter, levelFilter, search]);
 
     const visibleList = filteredList.slice(0, visibleCount);
-
     const todayMatches = useMemo(() => proximos.filter((m) => isToday(m.date)), [proximos]);
-
     const upcomingMatch = useMemo(() => {
         const now = new Date();
         return proximos.find((m) => !isToday(m.date) && new Date(m.date) > now) || null;
     }, [proximos]);
 
-    const handleTabChange = (tab) => {
-        setActiveTab(tab);
-        setVisibleCount(PAGE_SIZE);
-        setExpandedMatches([]);
-    };
-
-    const handleCreate = async (formData) => {
-        const res = await createMatchAction(formData);
-        if (res?.success) router.refresh();
-        else setError(res.error);
-    };
-
-    const handleDelete = (matchId) => {
-        setMatchToDelete(matchId);
-        setDeleteModalOpen(true);
-    };
-
-    const confirmDelete = async () => {
-        if (!matchToDelete) return;
-        setIsDeleting(true);
-        try {
-            await deleteMatchAction(matchToDelete);
-            router.refresh();
-            setDeleteModalOpen(false);
-        } catch (error) {
-            console.error("Error al eliminar:", error);
-            setError("No se pudo eliminar el partido.");
-        } finally {
-            setIsDeleting(false);
-            setMatchToDelete(null);
-        }
-    };
+    const handleTabChange = (tab) => { setActiveTab(tab); setVisibleCount(PAGE_SIZE); setExpandedMatches([]); };
+    const handleCreate = async (formData) => { const res = await createMatchAction(formData); if (res?.success) router.refresh(); else setError(res.error); };
+    const handleDelete = (matchId) => { setMatchToDelete(matchId); setDeleteModalOpen(true); };
+    const confirmDelete = async () => { if (!matchToDelete) return; setIsDeleting(true); try { await deleteMatchAction(matchToDelete); router.refresh(); setDeleteModalOpen(false); } catch (error) { setError("No se pudo eliminar el partido."); } finally { setIsDeleting(false); setMatchToDelete(null); } };
 
     const handleFileUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = async (event) => {
             const data = new Uint8Array(event.target.result);
@@ -364,226 +340,76 @@ export default function FixtureManager({ matches }) {
                 const sport = row["Deporte (rugby/hockey)"]?.toLowerCase() || "rugby";
                 const gender = row["Género"] || inferGenderAndLevel({ category }).gender;
                 const level = row["Nivel"] || inferGenderAndLevel({ category }).level;
-
-                return {
-                    homeTeam: row["Equipo Local"],
-                    awayTeam: row["Equipo Visitante"],
-                    category,
-                    sport,
-                    gender,
-                    level,
-                    date: parseExcelDate(rawDate),
-                };
+                return { homeTeam: row["Equipo Local"], awayTeam: row["Equipo Visitante"], category, sport, gender, level, date: parseExcelDate(rawDate) };
             });
 
             const res = await bulkCreateMatchesAction(matchesArray);
-            if (res?.success) {
-                alert(`¡${res.count} partidos cargados correctamente!`);
-                router.refresh();
-            } else {
-                alert(res?.error || "Error al cargar");
-            }
+            if (res?.success) { alert(`¡${res.count} partidos cargados correctamente!`); router.refresh(); } else { alert(res?.error || "Error al cargar"); }
         };
         reader.readAsArrayBuffer(file);
         e.target.value = "";
     };
 
     const toggleExpand = (matchId) => {
-        setExpandedMatches((prev) =>
-            prev.includes(matchId) ? prev.filter((id) => id !== matchId) : [...prev, matchId]
-        );
+        setExpandedMatches((prev) => prev.includes(matchId) ? prev.filter((id) => id !== matchId) : [...prev, matchId]);
     };
 
-    const tabButtonClass = (tab) =>
-        `px-4 sm:px-6 py-2.5 rounded-full text-sm sm:text-base font-bold transition ${activeTab === tab
-            ? "bg-verde text-white shadow"
-            : "bg-white text-gray-600 border border-gray-300 hover:bg-gray-50"
-        }`;
-
-    // Reset de filtros inferiores al cambiar superior
-    const handleSportFilterChange = (e) => {
-        setSportFilter(e.target.value);
-        setGenderFilter("todos");
-        setLevelFilter("todos");
-    };
-    const handleGenderFilterChange = (e) => {
-        setGenderFilter(e.target.value);
-        setLevelFilter("todos");
-    };
+    const tabButtonClass = (tab) => `px-4 sm:px-6 py-2.5 rounded-full text-sm sm:text-base font-bold transition ${activeTab === tab ? "bg-verde text-white shadow" : "bg-white text-gray-600 border border-gray-300 hover:bg-gray-50"}`;
+    const handleSportFilterChange = (e) => { setSportFilter(e.target.value); setGenderFilter("todos"); setLevelFilter("todos"); };
+    const handleGenderFilterChange = (e) => { setGenderFilter(e.target.value); setLevelFilter("todos"); };
 
     return (
         <div className="space-y-6 sm:space-y-8">
-            {/* Zona de Subida de Excel */}
             <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-200">
                 <h3 className="font-bold text-lg sm:text-xl mb-4">📥 Carga Masiva por Excel</h3>
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center">
-                    <a
-                        href="/api/fixture/template"
-                        download
-                        className="w-full sm:w-auto inline-flex justify-center items-center bg-blue-600 text-white px-5 py-3 rounded-full text-sm sm:text-base font-bold hover:bg-blue-700 transition"
-                    >
-                        ⬇️ Descargar Plantilla
-                    </a>
+                    <a href="/api/fixture/template" download className="w-full sm:w-auto inline-flex justify-center items-center bg-blue-600 text-white px-5 py-3 rounded-full text-sm sm:text-base font-bold hover:bg-blue-700 transition">⬇️ Descargar Plantilla</a>
                     <span className="text-gray-400 hidden sm:inline">o</span>
-                    <label className="w-full sm:w-auto inline-flex justify-center items-center bg-green-600 text-white px-5 py-3 rounded-full text-sm sm:text-base font-bold cursor-pointer hover:bg-green-700 transition">
-                        📤 Subir Torneo Completo
-                        <input type="file" accept=".xlsx, .xls" onChange={handleFileUpload} className="hidden" />
-                    </label>
+                    <label className="w-full sm:w-auto inline-flex justify-center items-center bg-green-600 text-white px-5 py-3 rounded-full text-sm sm:text-base font-bold cursor-pointer hover:bg-green-700 transition">📤 Subir Torneo Completo<input type="file" accept=".xlsx, .xls" onChange={handleFileUpload} className="hidden" /></label>
                 </div>
-                <p className="text-xs sm:text-sm text-gray-400 mt-3">
-                    La columna de fecha acepta formato DD-MM-AAAA (ej: 25-08-2026). Incluye columnas: Deporte, Género, Nivel.
-                </p>
             </div>
 
-            {/* Formulario manual */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-                <button
-                    onClick={() => setShowManualForm((v) => !v)}
-                    className="w-full text-left px-5 sm:px-6 py-4 font-bold flex justify-between items-center rounded-xl focus:outline-none focus:ring-2 focus:ring-verde"
-                    aria-expanded={showManualForm}
-                >
-                    <span className="text-base sm:text-lg">+ Cargar partido manual</span>
-                    <span className="text-gray-400">{showManualForm ? "▲" : "▼"}</span>
-                </button>
+                <button onClick={() => setShowManualForm((v) => !v)} className="w-full text-left px-5 sm:px-6 py-4 font-bold flex justify-between items-center rounded-xl"><span className="text-base sm:text-lg">+ Cargar partido manual</span><span className="text-gray-400">{showManualForm ? "▲" : "▼"}</span></button>
                 {showManualForm && (
                     <form action={handleCreate} className="p-5 sm:p-6 pt-0 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <input name="homeTeam" placeholder="Equipo Local" required className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde" />
                         <input name="awayTeam" placeholder="Equipo Visitante" required className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde" />
-                        <select name="sport" required className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde">
-                            <option value="">Deporte</option>
-                            <option value="rugby">🏉 Rugby</option>
-                            <option value="hockey">🏑 Hockey</option>
-                        </select>
-                        <select name="gender" required className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde">
-                            <option value="">Género</option>
-                            <option value="Masculino">Masculino</option>
-                            <option value="Femenino">Femenino</option>
-                            <option value="Mixto">Mixto</option>
-                        </select>
-                        <select name="level" required className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde">
-                            <option value="">Nivel</option>
-                            <option value="Primera">Primera</option>
-                            <option value="Juveniles">Juveniles</option>
-                            <option value="Infantiles">Infantiles</option>
-                            <option value="Veteranos">Veteranos</option>
-                            <option value="General">General</option>
-                        </select>
+                        <select name="sport" required className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde"><option value="">Deporte</option><option value="rugby">🏉 Rugby</option><option value="hockey">🏑 Hockey</option></select>
+                        <select name="gender" required className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde"><option value="">Género</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Mixto">Mixto</option></select>
+                        <select name="level" required className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde"><option value="">Nivel</option><option value="Primera">Primera</option><option value="Juveniles">Juveniles</option><option value="Infantiles">Infantiles</option><option value="Veteranos">Veteranos</option><option value="General">General</option></select>
                         <input name="category" placeholder="Categoría (opcional)" className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde" />
                         <input name="date" type="date" required className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde" />
-                        <button type="submit" className="md:col-span-2 bg-verde text-white px-6 py-3 rounded-full font-bold hover:bg-verde-oscuro transition text-sm sm:text-base">
-                            + Crear Partido
-                        </button>
+                        <button type="submit" className="md:col-span-2 bg-verde text-white px-6 py-3 rounded-full font-bold hover:bg-verde-oscuro transition text-sm sm:text-base">+ Crear Partido</button>
                         {error && <p className="text-red-500 md:col-span-2 text-sm">{error}</p>}
                     </form>
                 )}
             </div>
 
-            {/* Bloques HOY y Próximo Partido */}
-            {todayMatches.length > 0 && (
-                <div className="bg-yellow-500 text-white p-5 sm:p-6 rounded-xl shadow-lg border-2 border-yellow-300">
-                    <h2 className="text-sm sm:text-base font-bold uppercase tracking-widest opacity-80 mb-2">🔥 HOY</h2>
-                    {todayMatches.map((match) => (
-                        <div key={match.id} className="mb-2 last:mb-0">
-                            <p className="text-xl sm:text-2xl lg:text-3xl font-bold leading-tight">
-                                {match.homeTeam} <span className="text-yellow-100">vs</span> {match.awayTeam}
-                            </p>
-                            <p className="text-sm sm:text-base opacity-90 mt-1">
-                                📅 {new Date(match.date).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}
-                                {" "}· {match.sport} · {match.gender} · {match.level}
-                            </p>
-                        </div>
-                    ))}
-                </div>
-            )}
+            {todayMatches.length > 0 && (<div className="bg-yellow-500 text-white p-5 sm:p-6 rounded-xl shadow-lg border-2 border-yellow-300"><h2 className="text-sm sm:text-base font-bold uppercase tracking-widest opacity-80 mb-2">🔥 HOY</h2>{todayMatches.map((match) => (<div key={match.id} className="mb-2 last:mb-0"><p className="text-xl sm:text-2xl lg:text-3xl font-bold leading-tight">{match.homeTeam} <span className="text-yellow-100">vs</span> {match.awayTeam}</p><p className="text-sm sm:text-base opacity-90 mt-1">📅 {new Date(match.date).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })} {" "}· {match.sport} · {match.gender} · {match.level}</p></div>))}</div>)}
 
-            {upcomingMatch && (
-                <div className="bg-verde text-white p-5 sm:p-6 rounded-xl shadow-lg border-2 border-white">
-                    <h2 className="text-sm sm:text-base font-bold uppercase tracking-widest opacity-80 mb-2">🔜 Próximo Partido</h2>
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold leading-tight">
-                        {upcomingMatch.homeTeam} <span className="text-verde-claro">vs</span> {upcomingMatch.awayTeam}
-                    </p>
-                    <p className="text-sm sm:text-base opacity-90 mt-2">
-                        📅 {new Date(upcomingMatch.date).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}
-                        {" "}· {upcomingMatch.sport} · {upcomingMatch.gender} · {upcomingMatch.level}
-                    </p>
-                </div>
-            )}
+            {upcomingMatch && (<div className="bg-verde text-white p-5 sm:p-6 rounded-xl shadow-lg border-2 border-white"><h2 className="text-sm sm:text-base font-bold uppercase tracking-widest opacity-80 mb-2">🔜 Próximo Partido</h2><p className="text-xl sm:text-2xl lg:text-3xl font-bold leading-tight">{upcomingMatch.homeTeam} <span className="text-verde-claro">vs</span> {upcomingMatch.awayTeam}</p><p className="text-sm sm:text-base opacity-90 mt-2">📅 {new Date(upcomingMatch.date).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })} {" "}· {upcomingMatch.sport} · {upcomingMatch.gender} · {upcomingMatch.level}</p></div>)}
 
-            {/* Tabs */}
             <div className="flex gap-2 sm:gap-3 flex-wrap">
-                <button onClick={() => handleTabChange("proximos")} className={tabButtonClass("proximos")}>
-                    Próximos ({proximos.length})
-                </button>
-                <button onClick={() => handleTabChange("finalizados")} className={tabButtonClass("finalizados")}>
-                    Finalizados ({finalizados.length})
-                </button>
+                <button onClick={() => handleTabChange("proximos")} className={tabButtonClass("proximos")}>Próximos ({proximos.length})</button>
+                <button onClick={() => handleTabChange("finalizados")} className={tabButtonClass("finalizados")}>Finalizados ({finalizados.length})</button>
             </div>
 
-            {/* Filtros jerárquicos y búsqueda */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                <select value={sportFilter} onChange={handleSportFilterChange} className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde">
-                    <option value="todos">Todos los deportes</option>
-                    {sports.filter(s => s !== "todos").map(s => (
-                        <option key={s} value={s}>{s === "rugby" ? "🏉 Rugby" : s === "hockey" ? "🏑 Hockey" : s}</option>
-                    ))}
-                </select>
-                <select value={genderFilter} onChange={handleGenderFilterChange} disabled={sportFilter === "todos"} className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde disabled:bg-gray-100 disabled:text-gray-400">
-                    <option value="todos">Todos los géneros</option>
-                    {genders.filter(g => g !== "todos").map(g => <option key={g} value={g}>{g}</option>)}
-                </select>
-                <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} disabled={genderFilter === "todos"} className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde disabled:bg-gray-100 disabled:text-gray-400">
-                    <option value="todos">Todos los niveles</option>
-                    {levels.filter(l => l !== "todos").map(l => <option key={l} value={l}>{l}</option>)}
-                </select>
-                <input
-                    type="text"
-                    placeholder="Buscar por equipo..."
-                    value={search}
-                    onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE); }}
-                    className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde"
-                />
+                <select value={sportFilter} onChange={handleSportFilterChange} className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde"><option value="todos">Todos los deportes</option>{sports.filter(s => s !== "todos").map(s => (<option key={s} value={s}>{s === "rugby" ? "🏉 Rugby" : s === "hockey" ? "🏑 Hockey" : s}</option>))}</select>
+                <select value={genderFilter} onChange={handleGenderFilterChange} disabled={sportFilter === "todos"} className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde disabled:bg-gray-100 disabled:text-gray-400"><option value="todos">Todos los géneros</option>{genders.filter(g => g !== "todos").map(g => (<option key={g} value={g}>{g}</option>))}</select>
+                <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} disabled={genderFilter === "todos"} className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde disabled:bg-gray-100 disabled:text-gray-400"><option value="todos">Todos los niveles</option>{levels.filter(l => l !== "todos").map(l => (<option key={l} value={l}>{l}</option>))}</select>
+                <input type="text" placeholder="Buscar por equipo..." value={search} onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE); }} className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde" />
             </div>
 
-            {/* Lista de partidos */}
             <div className="space-y-4">
-                {visibleList.length === 0 && (
-                    <p className="text-gray-500 text-center py-8 text-sm sm:text-base">
-                        No hay partidos que coincidan con los filtros.
-                    </p>
-                )}
-                {visibleList.map((match) => (
-                    <MatchRow
-                        key={match.id}
-                        match={match}
-                        isExpanded={expandedMatches.includes(match.id)}
-                        onToggle={() => toggleExpand(match.id)}
-                        onDelete={() => handleDelete(match.id)}
-                    />
-                ))}
+                {visibleList.length === 0 && (<p className="text-gray-500 text-center py-8 text-sm sm:text-base">No hay partidos que coincidan con los filtros.</p>)}
+                {visibleList.map((match) => (<MatchRow key={match.id} match={match} isExpanded={expandedMatches.includes(match.id)} onToggle={() => toggleExpand(match.id)} onDelete={() => handleDelete(match.id)} />))}
             </div>
 
-            {visibleCount < filteredList.length && (
-                <div className="text-center">
-                    <button
-                        onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
-                        className="bg-white border border-gray-300 px-6 py-2.5 rounded-full font-bold hover:bg-gray-50 transition text-sm sm:text-base"
-                    >
-                        Cargar más ({filteredList.length - visibleCount} restantes)
-                    </button>
-                </div>
-            )}
+            {visibleCount < filteredList.length && (<div className="text-center"><button onClick={() => setVisibleCount((v) => v + PAGE_SIZE)} className="bg-white border border-gray-300 px-6 py-2.5 rounded-full font-bold hover:bg-gray-50 transition text-sm sm:text-base">Cargar más ({filteredList.length - visibleCount} restantes)</button></div>)}
 
-            {/* Modal de confirmación */}
-            <ConfirmModal
-                isOpen={deleteModalOpen}
-                onClose={() => setDeleteModalOpen(false)}
-                onConfirm={confirmDelete}
-                title="Eliminar partido"
-                message="¿Estás seguro de que deseas eliminar este partido? Esta acción no se puede deshacer."
-                confirmText="Eliminar"
-                cancelText="Cancelar"
-                isLoading={isDeleting}
-            />
+            <ConfirmModal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} onConfirm={confirmDelete} title="Eliminar partido" message="¿Estás seguro de que deseas eliminar este partido? Esta acción no se puede deshacer." confirmText="Eliminar" cancelText="Cancelar" isLoading={isDeleting} />
         </div>
     );
 }

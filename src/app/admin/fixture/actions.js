@@ -1,10 +1,8 @@
-// src/app/admin/fixture/actions.js
 "use server";
 
 import { adminDb } from "@/lib/firebase/admin";
 import { revalidatePath } from "next/cache";
 
-// Crear un nuevo partido
 export async function createMatchAction(formData) {
 	const sport = formData.get("sport");
 	const category = formData.get("category");
@@ -33,6 +31,7 @@ export async function createMatchAction(formData) {
 			homeTryPenalties: 0,
 			awayTryPenalties: 0,
 			finished: false,
+			imageUrl: "", // Campo para la foto
 		});
 		revalidatePath("/admin/fixture");
 		return { success: true };
@@ -41,7 +40,6 @@ export async function createMatchAction(formData) {
 	}
 }
 
-// Actualizar el resultado completo (Recibe el objeto payload desde el componente)
 export async function updateMatchResultAction(matchId, data) {
 	if (!matchId) return { error: "ID inválido" };
 
@@ -50,7 +48,7 @@ export async function updateMatchResultAction(matchId, data) {
 			.collection("matches")
 			.doc(matchId)
 			.update({
-				...data,
+				...data, // Esto incluye imageUrl si se pasa desde el cliente
 				updatedAt: new Date(),
 			});
 		revalidatePath("/admin/fixture");
@@ -60,7 +58,6 @@ export async function updateMatchResultAction(matchId, data) {
 	}
 }
 
-// Eliminar partido
 export async function deleteMatchAction(matchId) {
 	try {
 		await adminDb.collection("matches").doc(matchId).delete();
@@ -71,14 +68,12 @@ export async function deleteMatchAction(matchId) {
 	}
 }
 
-// 🔥 NUEVO: Subir torneo completo desde Excel
 export async function bulkCreateMatchesAction(matchesArray) {
 	if (!matchesArray || matchesArray.length === 0)
 		return { error: "No hay datos para cargar" };
 
 	try {
 		const batch = adminDb.batch();
-
 		matchesArray.forEach((match) => {
 			const docRef = adminDb.collection("matches").doc();
 			batch.set(docRef, {
@@ -98,14 +93,13 @@ export async function bulkCreateMatchesAction(matchesArray) {
 				homeTryPenalties: 0,
 				awayTryPenalties: 0,
 				finished: false,
+				imageUrl: "",
 			});
 		});
-
 		await batch.commit();
 		revalidatePath("/admin/fixture");
 		return { success: true, count: matchesArray.length };
 	} catch (error) {
-		console.error("Error al cargar fixture:", error);
 		return { error: "Error al cargar el archivo" };
 	}
 }
