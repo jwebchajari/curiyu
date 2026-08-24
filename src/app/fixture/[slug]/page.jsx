@@ -4,6 +4,7 @@
  * Lógica: Obtiene el partido por ID (slug) desde Firestore. En Next.js 15, `params` es
  *         una Promise, por lo que se usa `await params` para obtener el slug.
  *         Genera metadatos dinámicos para SEO, incluyendo imagen optimizada para compartir.
+ *         Muestra una imagen de portada grande (si existe) y luego el detalle.
  * Debería: Mostrar todos los detalles del partido al hacer clic en "Ver más" desde la lista,
  *          y permitir compartir el enlace con imagen y título personalizados.
  */
@@ -11,7 +12,7 @@ import { adminDb } from "@/lib/firebase/admin";
 import MatchDetail from "@/components/fixture/MatchDetail";
 import PageHeader from "@/components/layout/PageHeader";
 import { notFound } from "next/navigation";
-import { getOptimizedUrlFromUrl } from "@/lib/cloudinary-server";
+import Image from "next/image";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,6 @@ function serializeMatch(doc) {
 export async function generateMetadata({ params }) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://clubcuriyu.com";
   try {
-    // Compatible con Next 15: params es una Promise
     const resolvedParams = await params;
     const slug = resolvedParams?.slug;
     if (!slug) return { title: "Partido no encontrado" };
@@ -45,10 +45,8 @@ export async function generateMetadata({ params }) {
       match.finished ? `Resultado: ${match.homeScore} - ${match.awayScore}` : "Próximo partido"
     }`;
 
-    // Determinar URL de imagen optimizada para compartir
     let imageUrl;
     if (match.imageUrl && match.imageUrl !== "") {
-      // Si es de Cloudinary, optimizar con transformación 1200x630
       if (match.imageUrl.includes("res.cloudinary.com")) {
         imageUrl = getOptimizedUrlFromUrl(match.imageUrl, {
           width: 1200,
@@ -58,13 +56,11 @@ export async function generateMetadata({ params }) {
           quality: "auto",
         });
       } else {
-        // Si es otra URL, asegurar que sea absoluta
         imageUrl = match.imageUrl.startsWith("http")
           ? match.imageUrl
           : `${baseUrl}${match.imageUrl}`;
       }
     } else {
-      // Fallback a logo
       imageUrl = `${baseUrl}/logo2.png`;
     }
 
@@ -76,14 +72,7 @@ export async function generateMetadata({ params }) {
         description,
         type: "article",
         url: `${baseUrl}/fixture/${match.id}`,
-        images: [
-          {
-            url: imageUrl,
-            width: 1200,
-            height: 630,
-            alt: title,
-          },
-        ],
+        images: [{ url: imageUrl, width: 1200, height: 630, alt: title }],
       },
       twitter: {
         card: "summary_large_image",
@@ -102,25 +91,22 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function MatchDetailPage({ params }) {
-  // Compatible con Next 15: params es una Promise
   const resolvedParams = await params;
   const slug = resolvedParams?.slug;
 
-  if (!slug) {
-    notFound();
-  }
+  if (!slug) notFound();
 
   let match = null;
   try {
     const docSnap = await adminDb.collection("matches").doc(slug).get();
-    if (!docSnap.exists) {
-      notFound();
-    }
+    if (!docSnap.exists) notFound();
     match = serializeMatch(docSnap);
   } catch (error) {
     console.error("Error cargando partido:", error);
     notFound();
   }
+
+  const imageUrl = match.imageUrl && match.imageUrl !== "" ? match.imageUrl : "/logo2.png";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
@@ -129,6 +115,20 @@ export default async function MatchDetailPage({ params }) {
           eyebrow={match.sport === "hockey" ? "Hockey" : "Rugby"}
           title="Detalle del partido"
         />
+
+        {/* Banner de imagen grande */}
+        <div className="relative h-52 md:h-96 w-full rounded-2xl overflow-hidden mb-8 shadow-xl">
+          <Image
+            src={imageUrl}
+            alt={`${match.homeTeam} vs ${match.awayTeam}`}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 800px"
+            priority
+            unoptimized
+          />
+        </div>
+
         <MatchDetail match={match} />
       </div>
     </div>

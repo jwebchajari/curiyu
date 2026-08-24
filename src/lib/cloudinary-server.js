@@ -23,10 +23,6 @@ export async function deleteFromCloudinary(publicId) {
   }
 }
 
-/**
- * Genera URL optimizada a partir de un public_id.
- * Transformaciones: fetch_format=auto, quality=auto, crop=scale, width=800.
- */
 export function getOptimizedUrl(publicId, options = {}) {
   return cloudinary.url(publicId, {
     fetch_format: "auto",
@@ -37,10 +33,6 @@ export function getOptimizedUrl(publicId, options = {}) {
   });
 }
 
-/**
- * Convierte una URL completa de Cloudinary a una URL optimizada.
- * Extrae el public_id y aplica las mismas transformaciones.
- */
 export function getOptimizedUrlFromUrl(url, options = {}) {
   if (!url || !url.includes("res.cloudinary.com")) return url;
   const parts = url.split("/image/upload/");

@@ -1,4 +1,3 @@
-// src/components/admin/FixtureManager.jsx
 "use client";
 
 import { useState, useMemo, useRef } from "react";
@@ -113,7 +112,6 @@ function MatchResultForm({ match, onCancel }) {
             const data = await res.json();
 
             if (data.secure_url && data.public_id) {
-                // URL optimizada: calidad auto, formato auto (WebP), ancho 800px
                 const optimizedUrl = `https://res.cloudinary.com/${cloudName}/image/upload/q_auto,f_auto,c_scale,w_800/${data.public_id}`;
                 setImageUrl(optimizedUrl);
             } else {
@@ -202,7 +200,7 @@ function MatchResultForm({ match, onCancel }) {
                 </div>
             </div>
 
-            {/* Subida de Imagen con conversión a WebP */}
+            {/* Subida de Imagen */}
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">📸 Foto del Partido (opcional, se convertirá a WebP)</label>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -254,14 +252,13 @@ function MatchResultForm({ match, onCancel }) {
 // ---------- Fila de partido ----------
 function MatchRow({ match, isExpanded, onToggle, onDelete }) {
     const isFinished = match.finished;
-    const imageUrl = match.imageUrl || "/logo2.png"; // fallback a logo
-    const optimizedImage = getOptimizedCloudinaryUrl(imageUrl, 400); // ancho menor para miniaturas
+    const imageUrl = match.imageUrl || "/logo2.png";
+    const optimizedImage = getOptimizedCloudinaryUrl(imageUrl, 400);
 
     return (
         <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-gray-200">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-start gap-4 flex-1">
-                    {/* Miniatura de imagen SIEMPRE visible */}
                     <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
                         <img
                             src={optimizedImage}

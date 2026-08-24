@@ -11,9 +11,7 @@ export function getOptimizedCloudinaryUrl(urlOrPublicId, width = 800) {
 
   let publicId = urlOrPublicId;
 
-  // Si es una URL de Cloudinary, extraer public_id
   if (urlOrPublicId.includes("res.cloudinary.com")) {
-    // Si ya contiene transformaciones (contiene q_auto, f_auto, etc.), devolver tal cual
     if (urlOrPublicId.includes("q_auto") || urlOrPublicId.includes("f_auto")) {
       return urlOrPublicId;
     }
