@@ -31,10 +31,16 @@ export default async function AdminLayout({ children }) {
         if (!userDoc.exists) redirect("/login");
 
         const userData = userDoc.data();
-        if (!userData?.active || !userData?.roles || userData.roles.length === 0) {
+
+        // 🔥 CRÍTICO: Verificar roles válidos
+        const allowedRoles = ["ADMIN", "SUPER_ROOT", "NOTERO"];
+        const hasValidRole = userData?.roles?.some(role => allowedRoles.includes(role));
+
+        if (!userData?.active || !hasValidRole) {
             redirect("/login");
         }
 
+        // Limpiar fechas para que el cliente no explote
         const cleanUserData = {
             ...userData,
             createdAt: userData.createdAt?.toDate?.() ? userData.createdAt.toDate().toISOString() : null,
@@ -42,9 +48,10 @@ export default async function AdminLayout({ children }) {
         };
 
         return (
-            <div className="min-h-screen bg-gray-50 flex flex-col">
+            <div className="flex flex-col h-screen bg-gray-50">
+                {/* Usamos tu AdminNavbar que contiene header y navegación */}
                 <AdminNavbar user={cleanUserData} />
-                <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+                <main className="flex-1 overflow-y-auto p-6">
                     {children}
                 </main>
             </div>
