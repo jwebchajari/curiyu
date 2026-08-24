@@ -1,4 +1,13 @@
-/* src/app/globals.css */
+/* src/app/globals.css
+ * Resumen: Estilos globales + theme tokens de Tailwind v4.
+ * Lógica: Define paleta y tipografías vía @theme, y agrega ajustes globales
+ *         de accesibilidad (reduced-motion) y soporte de safe-area para que
+ *         la PWA instalada en iPhone no quede tapada por el notch o el
+ *         home indicator en modo standalone.
+ * Debería: Servir de base visual consistente para toda la app, sin romper
+ *         en dispositivos con recortes de pantalla ni ignorar preferencias
+ *         de accesibilidad del sistema operativo.
+ */
 @import "tailwindcss";
 
 @theme {
@@ -13,12 +22,47 @@
     --font-display: var(--font-bebas), sans-serif;
 }
 
+html {
+    color-scheme: light;
+    scroll-behavior: smooth;
+}
+
 body {
     background-color: #ffffff;
     color: #0d1b2a;
     line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+
+    /* Safe areas: evita que el contenido quede tapado por el notch o el
+       home indicator cuando la app corre instalada (PWA standalone) en
+       iPhone. En web normal estos valores son 0, así que no afecta nada. */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
 }
 
 a {
     text-decoration: none;
+}
+
+/* Accesibilidad: respeta si el usuario desactivó animaciones en su SO */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
 }
