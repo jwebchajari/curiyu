@@ -2,6 +2,7 @@
 
 import { adminDb } from "@/lib/firebase/admin";
 import { revalidatePath } from "next/cache";
+import { deleteFromCloudinary } from "@/lib/cloudinary-server";
 
 // Función auxiliar para convertir fecha DD-MM-AAAA a Date
 function parseDateFromString(dateStr) {
@@ -14,10 +15,19 @@ function parseDateFromString(dateStr) {
   return new Date(year, month - 1, day);
 }
 
+// Extraer public_id de una URL de Cloudinary
+function extractPublicIdFromUrl(url) {
+  if (!url || !url.includes("res.cloudinary.com")) return null;
+  const parts = url.split("/image/upload/");
+  if (parts.length < 2) return null;
+  return parts[1].replace(/^v\d+\//, "");
+}
+
 export async function createMatchAction(formData) {
   const sport = formData.get("sport") || "rugby";
   const category = formData.get("category") || "General";
   const gender = formData.get("gender") || "";
+  const level = formData.get("level") || "General";
   const homeTeam = formData.get("homeTeam");
   const awayTeam = formData.get("awayTeam");
   const dateInput = formData.get("date");
@@ -31,6 +41,7 @@ export async function createMatchAction(formData) {
       sport,
       category,
       gender,
+      level,
       homeTeam,
       awayTeam,
       date,
@@ -73,7 +84,27 @@ export async function updateMatchResultAction(matchId, data) {
 
 export async function deleteMatchAction(matchId) {
   try {
-    await adminDb.collection("matches").doc(matchId).delete();
+    // Obtener el partido para conocer su imageUrl
+    const docRef = adminDb.collection("matches").doc(matchId);
+    const doc = await docRef.get();
+
+    if (doc.exists) {
+      const imageUrl = doc.data().imageUrl;
+      if (imageUrl) {
+        const publicId = extractPublicIdFromUrl(imageUrl);
+        if (publicId) {
+          try {
+            await deleteFromCloudinary(publicId);
+          } catch (imgError) {
+            console.error("Error eliminando imagen de Cloudinary:", imgError);
+            // Continuamos con la eliminación del partido aunque falle la imagen
+          }
+        }
+      }
+    }
+
+    // Eliminar el partido de Firestore
+    await docRef.delete();
     revalidatePath("/admin/fixture");
     return { success: true };
   } catch (e) {
@@ -93,6 +124,7 @@ export async function bulkCreateMatchesAction(matchesArray) {
         sport: match.sport || "rugby",
         category: match.category || "General",
         gender: match.gender || "",
+        level: match.level || "General",
         homeTeam: match.homeTeam,
         awayTeam: match.awayTeam,
         date: parseDateFromString(match.date),

@@ -86,48 +86,44 @@ function MatchResultForm({ match }) {
     const homeScore = (homeTries * 5) + (homeConversions * 2) + (homePenalties * 3) + (homeTryPenalties * 8);
     const awayScore = (awayTries * 5) + (awayConversions * 2) + (awayPenalties * 3) + (awayTryPenalties * 8);
 
-    const handleImageUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        setUploadingImage(true);
-        setImageError("");
+const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingImage(true);
+    setImageError("");
 
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET);
 
-        try {
-            const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-            const preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+    try {
+        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+        const preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
-            if (!cloudName || !preset) {
-                throw new Error("Faltan variables de entorno de Cloudinary");
-            }
-
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-                method: "POST",
-                body: formData,
-            });
-
-            const data = await res.json();
-
-            if (data.secure_url && data.public_id) {
-                // Construir URL optimizada con transformaciones:
-                // - q_auto: calidad automática
-                // - f_auto: formato automático (WebP si el navegador lo soporta)
-                // - c_scale,w_800: redimensionar a 800px de ancho (se adapta al contenedor)
-                const optimizedUrl = `https://res.cloudinary.com/${cloudName}/image/upload/q_auto,f_auto,c_scale,w_800/${data.public_id}`;
-                setImageUrl(optimizedUrl);
-            } else {
-                setImageError(data.error?.message || "Error al subir la imagen");
-            }
-        } catch (err) {
-            setImageError(err.message || "Error al conectar con Cloudinary");
-        } finally {
-            setUploadingImage(false);
+        if (!cloudName || !preset) {
+            throw new Error("Faltan variables de entorno de Cloudinary");
         }
-    };
 
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+            method: "POST",
+            body: formData,
+        });
+
+        const data = await res.json();
+
+        if (data.secure_url && data.public_id) {
+            // URL optimizada: calidad auto, formato auto (WebP), ancho 800px
+            const optimizedUrl = `https://res.cloudinary.com/${cloudName}/image/upload/q_auto,f_auto,c_scale,w_800/${data.public_id}`;
+            setImageUrl(optimizedUrl);
+        } else {
+            setImageError(data.error?.message || "Error al subir la imagen");
+        }
+    } catch (err) {
+        setImageError(err.message || "Error al conectar con Cloudinary");
+    } finally {
+        setUploadingImage(false);
+    }
+};
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
