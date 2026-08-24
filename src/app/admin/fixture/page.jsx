@@ -24,8 +24,10 @@ export default async function AdminFixturePage() {
     }
 
     return (
-        <div>
-            <h1 className="text-3xl font-bold text-oscuro mb-6">Gestión de Fixture</h1>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-oscuro mb-6 sm:mb-8">
+                Gestión de Fixture
+            </h1>
             <FixtureManager matches={matches} />
         </div>
     );

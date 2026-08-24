@@ -74,7 +74,11 @@ export default function Navbar() {
         <header className="bg-white shadow-md sticky top-0 z-50">
             <nav className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
                 {/* Logo */}
-                <Link href="/" onClick={close} className="flex items-center gap-2">
+                <Link
+                    href="/"
+                    onClick={close}
+                    className="flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-verde rounded"
+                >
                     <Image
                         src="/logo.png"
                         alt="Club Curiyú"
@@ -82,7 +86,7 @@ export default function Navbar() {
                         height={40}
                         className="hidden sm:block"
                     />
-                    <span className="text-verde font-display text-3xl font-bold tracking-tight">
+                    <span className="text-verde font-display text-2xl md:text-3xl font-bold tracking-tight">
                         Curiyú
                     </span>
                 </Link>
@@ -91,28 +95,32 @@ export default function Navbar() {
                 <div className="hidden md:flex items-center gap-1 text-sm font-medium text-oscuro">
                     <Link
                         href="/"
-                        className="px-3 py-2 rounded-md hover:bg-verde-suave hover:text-verde transition-colors"
+                        className="px-3 py-2 rounded-md hover:bg-verde-suave hover:text-verde transition-colors focus:outline-none focus:ring-2 focus:ring-verde"
                     >
                         Inicio
                     </Link>
                     <Link
                         href="/historia"
-                        className="px-3 py-2 rounded-md hover:bg-verde-suave hover:text-verde transition-colors"
+                        className="px-3 py-2 rounded-md hover:bg-verde-suave hover:text-verde transition-colors focus:outline-none focus:ring-2 focus:ring-verde"
                     >
                         Historia
                     </Link>
 
                     {/* Rugby dropdown */}
                     <div className="relative group">
-                        <button className="flex items-center gap-1 px-3 py-2 rounded-md hover:bg-verde-suave hover:text-verde transition-colors">
+                        <button
+                            className="flex items-center gap-1 px-3 py-2 rounded-md hover:bg-verde-suave hover:text-verde transition-colors focus:outline-none focus:ring-2 focus:ring-verde"
+                            aria-haspopup="true"
+                            aria-expanded="false"
+                        >
                             Rugby <ChevronIcon className="w-4 h-4" />
                         </button>
-                        <div className="absolute top-full left-0 mt-1 w-52 bg-white rounded-xl shadow-lg border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 py-1">
+                        <div className="absolute top-full left-0 mt-1 w-52 bg-white rounded-xl shadow-lg border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 py-1 z-10">
                             {rugbyLinks.map((l) => (
                                 <Link
                                     key={l.href}
                                     href={l.href}
-                                    className="block px-4 py-2 text-sm hover:bg-verde-suave hover:text-verde transition-colors"
+                                    className="block px-4 py-2 text-sm hover:bg-verde-suave hover:text-verde transition-colors focus:outline-none focus:ring-2 focus:ring-verde"
                                 >
                                     {l.label}
                                 </Link>
@@ -122,15 +130,19 @@ export default function Navbar() {
 
                     {/* Hockey dropdown */}
                     <div className="relative group">
-                        <button className="flex items-center gap-1 px-3 py-2 rounded-md hover:bg-verde-suave hover:text-verde transition-colors">
+                        <button
+                            className="flex items-center gap-1 px-3 py-2 rounded-md hover:bg-verde-suave hover:text-verde transition-colors focus:outline-none focus:ring-2 focus:ring-verde"
+                            aria-haspopup="true"
+                            aria-expanded="false"
+                        >
                             Hockey <ChevronIcon className="w-4 h-4" />
                         </button>
-                        <div className="absolute top-full left-0 mt-1 w-52 bg-white rounded-xl shadow-lg border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 py-1">
+                        <div className="absolute top-full left-0 mt-1 w-52 bg-white rounded-xl shadow-lg border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 py-1 z-10">
                             {hockeyLinks.map((l) => (
                                 <Link
                                     key={l.href}
                                     href={l.href}
-                                    className="block px-4 py-2 text-sm hover:bg-verde-suave hover:text-verde transition-colors"
+                                    className="block px-4 py-2 text-sm hover:bg-verde-suave hover:text-verde transition-colors focus:outline-none focus:ring-2 focus:ring-verde"
                                 >
                                     {l.label}
                                 </Link>
@@ -140,13 +152,13 @@ export default function Navbar() {
 
                     <Link
                         href="/noticias"
-                        className="px-3 py-2 rounded-md hover:bg-verde-suave hover:text-verde transition-colors"
+                        className="px-3 py-2 rounded-md hover:bg-verde-suave hover:text-verde transition-colors focus:outline-none focus:ring-2 focus:ring-verde"
                     >
                         Noticias
                     </Link>
                     <Link
                         href="/fixture"
-                        className="px-3 py-2 rounded-md hover:bg-verde-suave hover:text-verde transition-colors"
+                        className="px-3 py-2 rounded-md hover:bg-verde-suave hover:text-verde transition-colors focus:outline-none focus:ring-2 focus:ring-verde"
                     >
                         Fixture
                     </Link>
@@ -154,7 +166,7 @@ export default function Navbar() {
                     {!user && (
                         <Link
                             href="/login"
-                            className="ml-2 bg-verde text-white px-5 py-2 rounded-full hover:bg-verde-oscuro transition-colors shadow-sm"
+                            className="ml-2 bg-verde text-white px-5 py-2 rounded-full hover:bg-verde-oscuro transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-verde focus:ring-offset-2"
                         >
                             Ingresar
                         </Link>
@@ -164,7 +176,7 @@ export default function Navbar() {
                             <span className="text-sm text-gray-600">👋 {user.email}</span>
                             <button
                                 onClick={handleLogout}
-                                className="bg-red-600 text-white px-4 py-1.5 rounded-full text-sm hover:bg-red-700 transition-colors"
+                                className="bg-red-600 text-white px-4 py-1.5 rounded-full text-sm hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                             >
                                 Cerrar sesión
                             </button>
@@ -174,9 +186,10 @@ export default function Navbar() {
 
                 {/* Hamburguesa */}
                 <button
-                    className="md:hidden p-2 rounded-md text-verde"
+                    className="md:hidden p-2 rounded-md text-verde focus:outline-none focus:ring-2 focus:ring-verde"
                     onClick={() => setMenuOpen(!menuOpen)}
                     aria-label="Menú"
+                    aria-expanded={menuOpen}
                 >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         {menuOpen ? (
@@ -205,27 +218,27 @@ export default function Navbar() {
                         <Link
                             href="/"
                             onClick={close}
-                            className="px-3 py-2 rounded-md hover:bg-verde-suave hover:text-verde transition-colors text-sm font-medium"
+                            className="px-3 py-2 rounded-md hover:bg-verde-suave hover:text-verde transition-colors text-sm font-medium focus:outline-none focus:ring-2 focus:ring-verde"
                         >
                             Inicio
                         </Link>
                         <Link
                             href="/historia"
                             onClick={close}
-                            className="px-3 py-2 rounded-md hover:bg-verde-suave hover:text-verde transition-colors text-sm font-medium"
+                            className="px-3 py-2 rounded-md hover:bg-verde-suave hover:text-verde transition-colors text-sm font-medium focus:outline-none focus:ring-2 focus:ring-verde"
                         >
                             Historia
                         </Link>
 
                         <button
                             onClick={() => toggle("rugby")}
-                            className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-verde-suave text-sm font-medium w-full text-left"
+                            className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-verde-suave text-sm font-medium w-full text-left focus:outline-none focus:ring-2 focus:ring-verde"
+                            aria-expanded={submenu === "rugby"}
                         >
                             Rugby
                             <ChevronIcon
-                                className={`w-4 h-4 transition-transform ${
-                                    submenu === "rugby" ? "rotate-180" : ""
-                                }`}
+                                className={`w-4 h-4 transition-transform ${submenu === "rugby" ? "rotate-180" : ""
+                                    }`}
                             />
                         </button>
                         {submenu === "rugby" && (
@@ -235,7 +248,7 @@ export default function Navbar() {
                                         key={l.href}
                                         href={l.href}
                                         onClick={close}
-                                        className="px-3 py-1.5 text-sm text-gray-600 hover:text-verde transition-colors"
+                                        className="px-3 py-1.5 text-sm text-gray-600 hover:text-verde transition-colors focus:outline-none focus:ring-2 focus:ring-verde"
                                     >
                                         {l.label}
                                     </Link>
@@ -245,13 +258,13 @@ export default function Navbar() {
 
                         <button
                             onClick={() => toggle("hockey")}
-                            className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-verde-suave text-sm font-medium w-full text-left"
+                            className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-verde-suave text-sm font-medium w-full text-left focus:outline-none focus:ring-2 focus:ring-verde"
+                            aria-expanded={submenu === "hockey"}
                         >
                             Hockey
                             <ChevronIcon
-                                className={`w-4 h-4 transition-transform ${
-                                    submenu === "hockey" ? "rotate-180" : ""
-                                }`}
+                                className={`w-4 h-4 transition-transform ${submenu === "hockey" ? "rotate-180" : ""
+                                    }`}
                             />
                         </button>
                         {submenu === "hockey" && (
@@ -261,7 +274,7 @@ export default function Navbar() {
                                         key={l.href}
                                         href={l.href}
                                         onClick={close}
-                                        className="px-3 py-1.5 text-sm text-gray-600 hover:text-verde transition-colors"
+                                        className="px-3 py-1.5 text-sm text-gray-600 hover:text-verde transition-colors focus:outline-none focus:ring-2 focus:ring-verde"
                                     >
                                         {l.label}
                                     </Link>
@@ -272,14 +285,14 @@ export default function Navbar() {
                         <Link
                             href="/noticias"
                             onClick={close}
-                            className="px-3 py-2 rounded-md hover:bg-verde-suave hover:text-verde transition-colors text-sm font-medium"
+                            className="px-3 py-2 rounded-md hover:bg-verde-suave hover:text-verde transition-colors text-sm font-medium focus:outline-none focus:ring-2 focus:ring-verde"
                         >
                             Noticias
                         </Link>
                         <Link
                             href="/fixture"
                             onClick={close}
-                            className="px-3 py-2 rounded-md hover:bg-verde-suave hover:text-verde transition-colors text-sm font-medium"
+                            className="px-3 py-2 rounded-md hover:bg-verde-suave hover:text-verde transition-colors text-sm font-medium focus:outline-none focus:ring-2 focus:ring-verde"
                         >
                             Fixture
                         </Link>
@@ -288,7 +301,7 @@ export default function Navbar() {
                             <Link
                                 href="/login"
                                 onClick={close}
-                                className="mt-1 bg-verde text-white text-center px-5 py-2 rounded-full text-sm font-semibold hover:bg-verde-oscuro transition-colors"
+                                className="mt-1 bg-verde text-white text-center px-5 py-2 rounded-full text-sm font-semibold hover:bg-verde-oscuro transition-colors focus:outline-none focus:ring-2 focus:ring-verde focus:ring-offset-2"
                             >
                                 Ingresar
                             </Link>
@@ -300,7 +313,7 @@ export default function Navbar() {
                                 </span>
                                 <button
                                     onClick={handleLogout}
-                                    className="bg-red-600 text-white text-center px-5 py-2 rounded-full text-sm font-semibold hover:bg-red-700 transition-colors"
+                                    className="bg-red-600 text-white text-center px-5 py-2 rounded-full text-sm font-semibold hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                                 >
                                     Cerrar sesión
                                 </button>

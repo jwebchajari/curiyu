@@ -1,8 +1,7 @@
 // src/app/admin/layout.jsx
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import AdminSidebar from "@/components/admin/AdminSidebar";
-import AdminHeader from "@/components/admin/AdminHeader";
+import AdminNavbar from "@/components/admin/AdminNavbar";
 import { adminAuth, adminDb } from "@/lib/firebase/admin";
 
 const COOKIE_NAME = "session";
@@ -36,7 +35,6 @@ export default async function AdminLayout({ children }) {
             redirect("/login");
         }
 
-        // Convertimos las fechas para que el cliente no explote
         const cleanUserData = {
             ...userData,
             createdAt: userData.createdAt?.toDate?.() ? userData.createdAt.toDate().toISOString() : null,
@@ -44,14 +42,11 @@ export default async function AdminLayout({ children }) {
         };
 
         return (
-            <div className="flex h-screen bg-gray-50">
-                <AdminSidebar user={cleanUserData} />
-                <div className="flex-1 flex flex-col overflow-hidden">
-                    <AdminHeader user={cleanUserData} />
-                    <main className="flex-1 overflow-y-auto p-6">
-                        {children}
-                    </main>
-                </div>
+            <div className="min-h-screen bg-gray-50 flex flex-col">
+                <AdminNavbar user={cleanUserData} />
+                <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+                    {children}
+                </main>
             </div>
         );
     } catch (error) {

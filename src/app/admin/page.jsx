@@ -74,31 +74,31 @@ export default async function AdminDashboard() {
     const tasaVictoria = totalPartidos > 0 ? Math.round((ganados / totalPartidos) * 100) : 0;
 
     return (
-        <div className="space-y-6">
-            <h1 className="text-3xl font-bold text-oscuro">Dashboard</h1>
+        <div className="space-y-6 sm:space-y-8">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-oscuro">Dashboard</h1>
 
             {/* Tarjetas principales */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                <div className="bg-white p-5 sm:p-6 rounded-xl shadow-md border border-gray-100">
                     <p className="text-sm text-gray-500">Partidos Jugados</p>
-                    <p className="text-3xl font-bold text-verde">{totalPartidos}</p>
+                    <p className="text-2xl sm:text-3xl font-bold text-verde">{totalPartidos}</p>
                 </div>
-                <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+                <div className="bg-white p-5 sm:p-6 rounded-xl shadow-md border border-gray-100">
                     <p className="text-sm text-gray-500">Ganados</p>
-                    <p className="text-3xl font-bold text-green-600">{ganados}</p>
+                    <p className="text-2xl sm:text-3xl font-bold text-green-600">{ganados}</p>
                 </div>
-                <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+                <div className="bg-white p-5 sm:p-6 rounded-xl shadow-md border border-gray-100">
                     <p className="text-sm text-gray-500">Perdidos</p>
-                    <p className="text-3xl font-bold text-red-600">{perdidos}</p>
+                    <p className="text-2xl sm:text-3xl font-bold text-red-600">{perdidos}</p>
                 </div>
-                <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+                <div className="bg-white p-5 sm:p-6 rounded-xl shadow-md border border-gray-100">
                     <p className="text-sm text-gray-500">Tasa de Victoria</p>
-                    <p className="text-3xl font-bold text-blue-600">{tasaVictoria}%</p>
+                    <p className="text-2xl sm:text-3xl font-bold text-blue-600">{tasaVictoria}%</p>
                 </div>
             </div>
 
             {/* Puntos Totales */}
-            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+            <div className="bg-white p-5 sm:p-6 rounded-xl shadow-md border border-gray-100">
                 <h2 className="text-xl font-bold mb-4">Puntos Totales</h2>
                 <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -112,10 +112,10 @@ export default async function AdminDashboard() {
                 </div>
             </div>
 
-            {/* Estadísticas de Juego (Tries, Conversiones, Penales, Try Penal) */}
+            {/* Estadísticas de Juego */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* A FAVOR */}
-                <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+                <div className="bg-white p-5 sm:p-6 rounded-xl shadow-md border border-gray-100">
                     <h3 className="text-lg font-bold text-verde mb-4">📊 A Favor</h3>
                     <div className="space-y-3">
                         <div className="flex justify-between border-b pb-2">
@@ -138,7 +138,7 @@ export default async function AdminDashboard() {
                 </div>
 
                 {/* EN CONTRA */}
-                <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+                <div className="bg-white p-5 sm:p-6 rounded-xl shadow-md border border-gray-100">
                     <h3 className="text-lg font-bold text-red-600 mb-4">📉 En Contra</h3>
                     <div className="space-y-3">
                         <div className="flex justify-between border-b pb-2">

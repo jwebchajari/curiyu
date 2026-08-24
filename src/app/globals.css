@@ -1,7 +1,5 @@
-/* css app/globals */
-
+/* src/app/globals.css */
 @import "tailwindcss";
-
 
 @theme {
     --color-verde: #198754;

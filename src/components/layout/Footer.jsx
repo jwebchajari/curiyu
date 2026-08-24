@@ -1,3 +1,4 @@
+// src/components/layout/Footer.jsx
 import Link from "next/link";
 
 const WpIcon = () => (
@@ -15,13 +16,13 @@ const IgIcon = () => (
 export default function Footer() {
     return (
         <footer className="bg-verde text-white/80">
-            <div className="container-club px-4 py-12 md:py-14 grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-10">
+            <div className="container-club px-4 py-10 md:py-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10">
                 {/* Identidad */}
-                <div>
+                <div className="sm:col-span-2 lg:col-span-1">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-display text-lg">C</div>
+                        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-display text-lg shrink-0">C</div>
                         <div>
-                            <span className="font-display text-2xl text-white tracking-wide">Club Curiyú</span>
+                            <span className="font-display text-xl md:text-2xl text-white tracking-wide">Club Curiyú</span>
                             <p className="text-xs text-white/60 -mt-0.5">Rugby & Hockey</p>
                         </div>
                     </div>
@@ -42,7 +43,12 @@ export default function Footer() {
                             { href: "/fixture", label: "Fixture" },
                         ].map(l => (
                             <li key={l.href}>
-                                <Link href={l.href} className="hover:text-white transition-colors py-1 inline-block">{l.label}</Link>
+                                <Link
+                                    href={l.href}
+                                    className="hover:text-white transition-colors py-1 inline-block focus:outline-none focus:ring-2 focus:ring-white/50 rounded"
+                                >
+                                    {l.label}
+                                </Link>
                             </li>
                         ))}
                     </ul>
@@ -63,7 +69,9 @@ export default function Footer() {
                             <svg className="w-4 h-4 shrink-0 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                             </svg>
-                            <a href="tel:+543456578953" className="hover:text-white transition-colors">+54 3456 578953</a>
+                            <a href="tel:+543456578953" className="hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-white/50 rounded">
+                                +54 3456 578953
+                            </a>
                         </li>
                     </ul>
                 </div>
@@ -72,12 +80,22 @@ export default function Footer() {
                 <div>
                     <h3 className="text-white text-xs font-semibold uppercase tracking-widest mb-4">Seguinos</h3>
                     <div className="flex gap-3">
-                        <a href="https://wa.me/543456578953" target="_blank" rel="noopener noreferrer"
-                            className="bg-white/10 hover:bg-verde-oscuro text-white p-2.5 rounded-full transition-colors" aria-label="WhatsApp">
+                        <a
+                            href="https://wa.me/543456578953"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-white/10 hover:bg-verde-oscuro text-white p-2.5 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-white/50"
+                            aria-label="WhatsApp"
+                        >
                             <WpIcon />
                         </a>
-                        <a href="https://www.instagram.com/clubcuriyu" target="_blank" rel="noopener noreferrer"
-                            className="bg-white/10 hover:bg-verde-oscuro text-white p-2.5 rounded-full transition-colors" aria-label="Instagram">
+                        <a
+                            href="https://www.instagram.com/clubcuriyu"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-white/10 hover:bg-verde-oscuro text-white p-2.5 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-white/50"
+                            aria-label="Instagram"
+                        >
                             <IgIcon />
                         </a>
                     </div>

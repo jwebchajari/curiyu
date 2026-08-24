@@ -11,7 +11,10 @@ export async function generateMetadata({ params }) {
     const news = await getNewsBySlug(slug);
 
     if (!news) {
-        return { title: "Noticia no encontrada", description: "La noticia que buscás no existe." };
+        return {
+            title: "Noticia no encontrada",
+            description: "La noticia que buscás no existe.",
+        };
     }
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
@@ -28,13 +31,18 @@ export async function generateMetadata({ params }) {
             type: 'article',
             publishedTime: publishedTime,
             url: newsUrl,
-            images: news.coverImageUrl ? [{ url: news.coverImageUrl }] : [],
+            siteName: "Club Curiyú",
+            images: news.coverImageUrl
+                ? [{ url: news.coverImageUrl, alt: news.title }]
+                : [{ url: `${siteUrl}/escudoi.png`, alt: "Escudo del Club Curiyú" }],
         },
         twitter: {
             card: 'summary_large_image',
             title: news.title,
             description: news.excerpt,
-            images: news.coverImageUrl ? [news.coverImageUrl] : [],
+            images: news.coverImageUrl
+                ? [news.coverImageUrl]
+                : [`${siteUrl}/escudoi.png`],
         },
     };
 }
@@ -62,7 +70,10 @@ export default async function NoticiaDetallePage({ params }) {
 
     return (
         <article className="max-w-3xl mx-auto px-4 py-10 md:py-16">
-            <Link href="/noticias" className="text-verde hover:underline text-sm mb-4 inline-block">
+            <Link
+                href="/noticias"
+                className="inline-flex items-center gap-1 text-verde hover:underline text-sm mb-6 focus:outline-none focus:ring-2 focus:ring-verde rounded"
+            >
                 ← Volver a Noticias
             </Link>
 

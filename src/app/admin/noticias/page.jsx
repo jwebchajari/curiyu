@@ -1,3 +1,4 @@
+// src/app/admin/noticias/page.jsx
 import { getAllNews } from "@/lib/firebase/news";
 import NewsList from "@/components/admin/NewsList";
 import AdminTabs from "@/components/admin/AdminTabs";
@@ -13,7 +14,6 @@ export default async function NoticiasPage() {
 
   try {
     const rawNews = await getAllNews();
-    // Convertimos las fechas de Firestore a strings legibles
     news = rawNews.map((item) => ({
       ...item,
       publishedAt: item.publishedAt?.toDate?.()
@@ -36,17 +36,22 @@ export default async function NoticiasPage() {
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-gray-800">📰 Noticias</h2>
-        <a href="/admin/noticias/crear" className="bg-verde text-white px-4 py-2 rounded-full text-sm hover:bg-verde-oscuro transition">+ Nueva Noticia</a>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">📰 Noticias</h2>
+        <a
+          href="/admin/noticias/crear"
+          className="inline-flex items-center justify-center bg-verde text-white px-5 py-2.5 rounded-full text-sm sm:text-base font-medium hover:bg-verde-oscuro transition"
+        >
+          + Nueva Noticia
+        </a>
       </div>
 
       <AdminTabs tabs={tabs} basePath="/admin/noticias" />
 
-      <div className="mt-4">
+      <div>
         {error ? (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
             <strong>Error:</strong> {error}
           </div>
         ) : (

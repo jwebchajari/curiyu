@@ -1,8 +1,10 @@
+// src/components/admin/FixtureManager.jsx
 "use client";
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import * as XLSX from "xlsx";
+import ConfirmModal from "@/components/admin/ConfirmModal";
 import {
     createMatchAction,
     updateMatchResultAction,
@@ -10,37 +12,60 @@ import {
     bulkCreateMatchesAction,
 } from "@/app/admin/fixture/actions";
 
-// ---------- Utilidad: parseo robusto de fechas de Excel ----------
+// ---------- Utilidades ----------
+function isToday(date) {
+    const today = new Date();
+    const d = new Date(date);
+    return (
+        d.getDate() === today.getDate() &&
+        d.getMonth() === today.getMonth() &&
+        d.getFullYear() === today.getFullYear()
+    );
+}
+
 function parseExcelDate(value) {
     if (!value) return new Date();
-
-    // Ya viene como Date (cuando usamos cellDates: true)
     if (value instanceof Date && !isNaN(value.getTime())) return value;
-
-    // Número de serie de Excel (fallback si cellDates no aplicó)
     if (typeof value === "number") {
         const excelEpoch = new Date(Date.UTC(1899, 11, 30));
         return new Date(excelEpoch.getTime() + value * 86400000);
     }
-
     if (typeof value === "string") {
         const trimmed = value.trim();
-        // DD-MM-AAAA o DD/MM/AAAA
         const match = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
         if (match) {
             const [, day, month, year] = match;
             const d = new Date(Number(year), Number(month) - 1, Number(day));
             if (!isNaN(d.getTime())) return d;
         }
-        // Último intento: dejar que Date lo parsee solo (ISO, etc.)
         const parsed = new Date(trimmed);
         if (!isNaN(parsed.getTime())) return parsed;
     }
-
     return new Date();
 }
 
-// ---------- Sub-componente: formulario de resultado ----------
+// Inferir género y nivel a partir de category (para datos viejos)
+function inferGenderAndLevel(match) {
+    let gender = match.gender;
+    let level = match.level;
+    const cat = (match.category || "").toLowerCase();
+
+    if (!gender) {
+        if (cat.includes("femenino") || cat.includes("femenina")) gender = "Femenino";
+        else if (cat.includes("masculino")) gender = "Masculino";
+        else gender = "Mixto";
+    }
+    if (!level) {
+        if (cat.includes("primera")) level = "Primera";
+        else if (cat.includes("juvenil")) level = "Juveniles";
+        else if (cat.includes("infantil")) level = "Infantiles";
+        else if (cat.includes("veterano") || cat.includes("veterana")) level = "Veteranos";
+        else level = "General";
+    }
+    return { gender, level };
+}
+
+// ---------- Subcomponente: formulario de resultado ----------
 function MatchResultForm({ match }) {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,7 +86,6 @@ function MatchResultForm({ match }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
-
         const result = await updateMatchResultAction(match.id, {
             homeScore,
             awayScore,
@@ -75,76 +99,85 @@ function MatchResultForm({ match }) {
             awayTryPenalties,
             finished: true,
         });
-
         setIsSubmitting(false);
         if (result?.success) router.refresh();
         else alert(result?.error || "Error al guardar");
     };
 
-    const inputClass = "w-full border border-gray-300 rounded-lg px-3 py-2 text-center text-sm focus:outline-none focus:ring-2 focus:ring-verde";
+    const inputClass = "w-full border border-gray-300 rounded-lg px-3 py-2.5 text-center text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde focus:border-verde transition";
 
     return (
-        <form onSubmit={handleSubmit} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 bg-gray-50 rounded-xl border border-gray-200 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                    <h4 className="font-bold text-oscuro mb-3 text-lg text-center border-b pb-2">{match.homeTeam}</h4>
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between gap-2">
-                            <label className="text-sm font-medium text-gray-600">Tries (5 pts)</label>
-                            <input type="number" min="0" value={homeTries} onChange={(e) => setHomeTries(parseInt(e.target.value) || 0)} className={inputClass} />
-                        </div>
-                        <div className="flex items-center justify-between gap-2">
-                            <label className="text-sm font-medium text-gray-600">Conversiones (2 pts)</label>
-                            <input type="number" min="0" value={homeConversions} onChange={(e) => setHomeConversions(parseInt(e.target.value) || 0)} className={inputClass} />
-                        </div>
-                        <div className="flex items-center justify-between gap-2">
-                            <label className="text-sm font-medium text-gray-600">Penales (3 pts)</label>
-                            <input type="number" min="0" value={homePenalties} onChange={(e) => setHomePenalties(parseInt(e.target.value) || 0)} className={inputClass} />
-                        </div>
-                        <div className="flex items-center justify-between gap-2">
-                            <label className="text-sm font-medium text-gray-600">Try Penal (8 pts)</label>
-                            <input type="number" min="0" value={homeTryPenalties} onChange={(e) => setHomeTryPenalties(parseInt(e.target.value) || 0)} className={inputClass} />
-                        </div>
-                        <div className="mt-4 pt-3 border-t border-gray-200 text-center">
+                {/* Local */}
+                <div className="bg-white p-4 sm:p-5 rounded-lg shadow-sm">
+                    <h4 className="font-bold text-oscuro mb-4 text-lg sm:text-xl text-center border-b pb-2">
+                        {match.homeTeam}
+                    </h4>
+                    <div className="space-y-4">
+                        {[
+                            { label: "Tries (5 pts)", value: homeTries, setter: setHomeTries },
+                            { label: "Conversiones (2 pts)", value: homeConversions, setter: setHomeConversions },
+                            { label: "Penales (3 pts)", value: homePenalties, setter: setHomePenalties },
+                            { label: "Try Penal (8 pts)", value: homeTryPenalties, setter: setHomeTryPenalties },
+                        ].map((item, idx) => (
+                            <div key={idx} className="flex flex-col gap-1">
+                                <label className="text-sm font-medium text-gray-600">{item.label}</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={item.value}
+                                    onChange={(e) => item.setter(parseInt(e.target.value) || 0)}
+                                    className={inputClass}
+                                />
+                            </div>
+                        ))}
+                        <div className="mt-4 pt-4 border-t border-gray-200 text-center">
                             <span className="text-sm text-gray-500">Puntaje Total</span>
-                            <p className="text-3xl font-bold text-verde">{homeScore}</p>
+                            <p className="text-2xl sm:text-3xl font-bold text-verde">{homeScore}</p>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                    <h4 className="font-bold text-oscuro mb-3 text-lg text-center border-b pb-2">{match.awayTeam}</h4>
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between gap-2">
-                            <label className="text-sm font-medium text-gray-600">Tries (5 pts)</label>
-                            <input type="number" min="0" value={awayTries} onChange={(e) => setAwayTries(parseInt(e.target.value) || 0)} className={inputClass} />
-                        </div>
-                        <div className="flex items-center justify-between gap-2">
-                            <label className="text-sm font-medium text-gray-600">Conversiones (2 pts)</label>
-                            <input type="number" min="0" value={awayConversions} onChange={(e) => setAwayConversions(parseInt(e.target.value) || 0)} className={inputClass} />
-                        </div>
-                        <div className="flex items-center justify-between gap-2">
-                            <label className="text-sm font-medium text-gray-600">Penales (3 pts)</label>
-                            <input type="number" min="0" value={awayPenalties} onChange={(e) => setAwayPenalties(parseInt(e.target.value) || 0)} className={inputClass} />
-                        </div>
-                        <div className="flex items-center justify-between gap-2">
-                            <label className="text-sm font-medium text-gray-600">Try Penal (8 pts)</label>
-                            <input type="number" min="0" value={awayTryPenalties} onChange={(e) => setAwayTryPenalties(parseInt(e.target.value) || 0)} className={inputClass} />
-                        </div>
-                        <div className="mt-4 pt-3 border-t border-gray-200 text-center">
+                {/* Visitante */}
+                <div className="bg-white p-4 sm:p-5 rounded-lg shadow-sm">
+                    <h4 className="font-bold text-oscuro mb-4 text-lg sm:text-xl text-center border-b pb-2">
+                        {match.awayTeam}
+                    </h4>
+                    <div className="space-y-4">
+                        {[
+                            { label: "Tries (5 pts)", value: awayTries, setter: setAwayTries },
+                            { label: "Conversiones (2 pts)", value: awayConversions, setter: setAwayConversions },
+                            { label: "Penales (3 pts)", value: awayPenalties, setter: setAwayPenalties },
+                            { label: "Try Penal (8 pts)", value: awayTryPenalties, setter: setAwayTryPenalties },
+                        ].map((item, idx) => (
+                            <div key={idx} className="flex flex-col gap-1">
+                                <label className="text-sm font-medium text-gray-600">{item.label}</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={item.value}
+                                    onChange={(e) => item.setter(parseInt(e.target.value) || 0)}
+                                    className={inputClass}
+                                />
+                            </div>
+                        ))}
+                        <div className="mt-4 pt-4 border-t border-gray-200 text-center">
                             <span className="text-sm text-gray-500">Puntaje Total</span>
-                            <p className="text-3xl font-bold text-verde">{awayScore}</p>
+                            <p className="text-2xl sm:text-3xl font-bold text-verde">{awayScore}</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="mt-6 flex flex-col md:flex-row justify-between items-center gap-3">
-                <p className="text-xs text-gray-500">El partido se marcará como finalizado al guardar.</p>
+            <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 pt-2">
+                <p className="text-xs sm:text-sm text-gray-500 text-center sm:text-left">
+                    El partido se marcará como finalizado al guardar.
+                </p>
                 <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="bg-verde text-white px-8 py-3 rounded-full font-bold shadow-lg hover:bg-verde-oscuro transition disabled:opacity-50"
+                    className="w-full sm:w-auto bg-verde text-white px-6 sm:px-8 py-3 rounded-full font-bold shadow-lg hover:bg-verde-oscuro transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                 >
                     {isSubmitting ? "Guardando..." : "Guardar Resultado Final"}
                 </button>
@@ -158,20 +191,20 @@ function MatchRow({ match, isExpanded, onToggle, onDelete }) {
     const isFinished = match.finished;
 
     return (
-        <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+        <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h3 className="font-bold text-lg">
+                    <h3 className="font-bold text-lg sm:text-xl">
                         {match.homeTeam} <span className="text-gray-400">vs</span> {match.awayTeam}
                     </h3>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs sm:text-sm text-gray-500 mt-1">
                         📅 {new Date(match.date).toLocaleDateString("es-AR", { day: "numeric", month: "long", year: "numeric" })}
                         {" · "}
-                        <span className="uppercase">{match.sport}</span> · {match.category}
+                        <span className="uppercase">{match.sport}</span> · {match.gender} · {match.level}
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                     {isFinished && (
                         <span className="text-verde font-bold bg-verde/10 px-3 py-1 rounded-full text-sm">
                             {match.homeScore} - {match.awayScore}
@@ -179,18 +212,21 @@ function MatchRow({ match, isExpanded, onToggle, onDelete }) {
                     )}
                     <button
                         onClick={onToggle}
-                        className="text-blue-600 hover:underline text-sm font-medium"
+                        className="px-3 py-2 sm:px-4 sm:py-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition text-sm font-medium"
                     >
                         {isExpanded ? "Ocultar" : isFinished ? "Ver / Editar" : "Cargar resultado"}
                     </button>
-                    <button onClick={onDelete} className="text-red-600 text-sm hover:underline">
+                    <button
+                        onClick={onDelete}
+                        className="px-3 py-2 sm:px-4 sm:py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition text-sm font-medium"
+                    >
                         Eliminar
                     </button>
                 </div>
             </div>
 
             {isExpanded && (
-                <div className="mt-4">
+                <div className="mt-4 sm:mt-5">
                     <MatchResultForm match={match} />
                 </div>
             )}
@@ -205,49 +241,77 @@ export default function FixtureManager({ matches }) {
     const router = useRouter();
     const [error, setError] = useState("");
     const [expandedMatches, setExpandedMatches] = useState([]);
-    const [activeTab, setActiveTab] = useState("proximos"); // proximos | finalizados
+    const [activeTab, setActiveTab] = useState("proximos");
     const [search, setSearch] = useState("");
-    const [categoryFilter, setCategoryFilter] = useState("todas");
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
     const [showManualForm, setShowManualForm] = useState(false);
 
-    const categories = useMemo(() => {
-        const set = new Set(matches.map((m) => m.category).filter(Boolean));
-        return ["todas", ...Array.from(set)];
+    // Filtros jerárquicos
+    const [sportFilter, setSportFilter] = useState("todos");
+    const [genderFilter, setGenderFilter] = useState("todos");
+    const [levelFilter, setLevelFilter] = useState("todos");
+
+    // Modal de eliminación
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [matchToDelete, setMatchToDelete] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    // Normalizar matches con gender/level inferidos
+    const normalizedMatches = useMemo(() => {
+        return matches.map((m) => {
+            const { gender, level } = inferGenderAndLevel(m);
+            return { ...m, gender, level };
+        });
     }, [matches]);
 
+    // Opciones para filtros
+    const sports = useMemo(() => {
+        const set = new Set(normalizedMatches.map((m) => m.sport).filter(Boolean));
+        return ["todos", ...Array.from(set)];
+    }, [normalizedMatches]);
+
+    const genders = useMemo(() => {
+        const set = new Set(normalizedMatches.map((m) => m.gender).filter(Boolean));
+        return ["todos", ...Array.from(set)];
+    }, [normalizedMatches]);
+
+    const levels = useMemo(() => {
+        const set = new Set(normalizedMatches.map((m) => m.level).filter(Boolean));
+        return ["todos", ...Array.from(set)];
+    }, [normalizedMatches]);
+
     const proximos = useMemo(
-        () =>
-            matches
-                .filter((m) => !m.finished)
-                .sort((a, b) => new Date(a.date) - new Date(b.date)),
-        [matches]
+        () => normalizedMatches.filter((m) => !m.finished).sort((a, b) => new Date(a.date) - new Date(b.date)),
+        [normalizedMatches]
     );
 
     const finalizados = useMemo(
-        () =>
-            matches
-                .filter((m) => m.finished)
-                .sort((a, b) => new Date(b.date) - new Date(a.date)),
-        [matches]
+        () => normalizedMatches.filter((m) => m.finished).sort((a, b) => new Date(b.date) - new Date(a.date)),
+        [normalizedMatches]
     );
 
     const baseList = activeTab === "proximos" ? proximos : finalizados;
 
     const filteredList = useMemo(() => {
         return baseList.filter((m) => {
-            const matchesCategory = categoryFilter === "todas" || m.category === categoryFilter;
+            const matchesSport = sportFilter === "todos" || m.sport === sportFilter;
+            const matchesGender = genderFilter === "todos" || m.gender === genderFilter;
+            const matchesLevel = levelFilter === "todos" || m.level === levelFilter;
             const term = search.trim().toLowerCase();
             const matchesSearch =
-                !term ||
-                m.homeTeam?.toLowerCase().includes(term) ||
-                m.awayTeam?.toLowerCase().includes(term);
-            return matchesCategory && matchesSearch;
+                !term || m.homeTeam?.toLowerCase().includes(term) || m.awayTeam?.toLowerCase().includes(term);
+            return matchesSport && matchesGender && matchesLevel && matchesSearch;
         });
-    }, [baseList, categoryFilter, search]);
+    }, [baseList, sportFilter, genderFilter, levelFilter, search]);
 
     const visibleList = filteredList.slice(0, visibleCount);
-    const nextMatch = proximos[0];
+
+    const todayMatches = useMemo(() => proximos.filter((m) => isToday(m.date)), [proximos]);
+
+    const upcomingMatch = useMemo(() => {
+        const now = new Date();
+        return proximos.find((m) => !isToday(m.date) && new Date(m.date) > now) || null;
+    }, [proximos]);
 
     const handleTabChange = (tab) => {
         setActiveTab(tab);
@@ -261,10 +325,24 @@ export default function FixtureManager({ matches }) {
         else setError(res.error);
     };
 
-    const handleDelete = async (matchId) => {
-        if (confirm("¿Eliminar este partido?")) {
-            await deleteMatchAction(matchId);
+    const handleDelete = (matchId) => {
+        setMatchToDelete(matchId);
+        setDeleteModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!matchToDelete) return;
+        setIsDeleting(true);
+        try {
+            await deleteMatchAction(matchToDelete);
             router.refresh();
+            setDeleteModalOpen(false);
+        } catch (error) {
+            console.error("Error al eliminar:", error);
+            setError("No se pudo eliminar el partido.");
+        } finally {
+            setIsDeleting(false);
+            setMatchToDelete(null);
         }
     };
 
@@ -275,7 +353,6 @@ export default function FixtureManager({ matches }) {
         const reader = new FileReader();
         reader.onload = async (event) => {
             const data = new Uint8Array(event.target.result);
-            // cellDates: true → las celdas de fecha vienen como Date en vez de número de serie
             const workbook = XLSX.read(data, { type: "array", cellDates: true });
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
@@ -283,11 +360,18 @@ export default function FixtureManager({ matches }) {
 
             const matchesArray = jsonData.map((row) => {
                 const rawDate = row["Fecha (DD-MM-AAAA)"];
+                const category = row["Categoría"] || "General";
+                const sport = row["Deporte (rugby/hockey)"]?.toLowerCase() || "rugby";
+                const gender = row["Género"] || inferGenderAndLevel({ category }).gender;
+                const level = row["Nivel"] || inferGenderAndLevel({ category }).level;
+
                 return {
                     homeTeam: row["Equipo Local"],
                     awayTeam: row["Equipo Visitante"],
-                    category: row["Categoría"] || "General",
-                    sport: row["Deporte (rugby/hockey)"]?.toLowerCase() || "rugby",
+                    category,
+                    sport,
+                    gender,
+                    level,
                     date: parseExcelDate(rawDate),
                 };
             });
@@ -311,74 +395,122 @@ export default function FixtureManager({ matches }) {
     };
 
     const tabButtonClass = (tab) =>
-        `px-5 py-2.5 rounded-full text-sm font-bold transition ${activeTab === tab
+        `px-4 sm:px-6 py-2.5 rounded-full text-sm sm:text-base font-bold transition ${activeTab === tab
             ? "bg-verde text-white shadow"
             : "bg-white text-gray-600 border border-gray-300 hover:bg-gray-50"
         }`;
 
+    // Reset de filtros inferiores al cambiar superior
+    const handleSportFilterChange = (e) => {
+        setSportFilter(e.target.value);
+        setGenderFilter("todos");
+        setLevelFilter("todos");
+    };
+    const handleGenderFilterChange = (e) => {
+        setGenderFilter(e.target.value);
+        setLevelFilter("todos");
+    };
+
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 sm:space-y-8">
             {/* Zona de Subida de Excel */}
-            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-                <h3 className="font-bold text-lg mb-3">📥 Carga Masiva por Excel</h3>
-                <div className="flex flex-col md:flex-row gap-4 items-center">
-                    <a href="/api/fixture/template" download className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-blue-700">
+            <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 className="font-bold text-lg sm:text-xl mb-4">📥 Carga Masiva por Excel</h3>
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center">
+                    <a
+                        href="/api/fixture/template"
+                        download
+                        className="w-full sm:w-auto inline-flex justify-center items-center bg-blue-600 text-white px-5 py-3 rounded-full text-sm sm:text-base font-bold hover:bg-blue-700 transition"
+                    >
                         ⬇️ Descargar Plantilla
                     </a>
-                    <span className="text-gray-400">o</span>
-                    <label className="bg-green-600 text-white px-4 py-2 rounded-full text-sm font-bold cursor-pointer hover:bg-green-700">
+                    <span className="text-gray-400 hidden sm:inline">o</span>
+                    <label className="w-full sm:w-auto inline-flex justify-center items-center bg-green-600 text-white px-5 py-3 rounded-full text-sm sm:text-base font-bold cursor-pointer hover:bg-green-700 transition">
                         📤 Subir Torneo Completo
                         <input type="file" accept=".xlsx, .xls" onChange={handleFileUpload} className="hidden" />
                     </label>
                 </div>
-                <p className="text-xs text-gray-400 mt-2">
-                    La columna de fecha acepta formato DD-MM-AAAA (ej: 25-08-2026).
+                <p className="text-xs sm:text-sm text-gray-400 mt-3">
+                    La columna de fecha acepta formato DD-MM-AAAA (ej: 25-08-2026). Incluye columnas: Deporte, Género, Nivel.
                 </p>
             </div>
 
-            {/* Formulario manual (colapsable) */}
-            <div className="bg-white rounded-lg shadow-md border border-gray-200">
+            {/* Formulario manual */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
                 <button
                     onClick={() => setShowManualForm((v) => !v)}
-                    className="w-full text-left px-6 py-4 font-bold flex justify-between items-center"
+                    className="w-full text-left px-5 sm:px-6 py-4 font-bold flex justify-between items-center rounded-xl focus:outline-none focus:ring-2 focus:ring-verde"
+                    aria-expanded={showManualForm}
                 >
-                    <span>+ Cargar partido manual</span>
+                    <span className="text-base sm:text-lg">+ Cargar partido manual</span>
                     <span className="text-gray-400">{showManualForm ? "▲" : "▼"}</span>
                 </button>
                 {showManualForm && (
-                    <form action={handleCreate} className="p-6 pt-0 grid grid-cols-1 md:grid-cols-5 gap-4">
-                        <input name="homeTeam" placeholder="Equipo Local" required className="border border-gray-300 rounded-lg px-3 py-2" />
-                        <input name="awayTeam" placeholder="Equipo Visitante" required className="border border-gray-300 rounded-lg px-3 py-2" />
-                        <input name="category" placeholder="Categoría" className="border border-gray-300 rounded-lg px-3 py-2" />
-                        <input name="date" type="date" required className="border border-gray-300 rounded-lg px-3 py-2" />
-                        <select name="sport" className="border border-gray-300 rounded-lg px-3 py-2">
-                            <option value="rugby">Rugby</option>
-                            <option value="hockey">Hockey</option>
+                    <form action={handleCreate} className="p-5 sm:p-6 pt-0 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input name="homeTeam" placeholder="Equipo Local" required className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde" />
+                        <input name="awayTeam" placeholder="Equipo Visitante" required className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde" />
+                        <select name="sport" required className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde">
+                            <option value="">Deporte</option>
+                            <option value="rugby">🏉 Rugby</option>
+                            <option value="hockey">🏑 Hockey</option>
                         </select>
-                        <button type="submit" className="bg-verde text-white px-4 py-2 rounded-full col-span-1 md:col-span-5">
+                        <select name="gender" required className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde">
+                            <option value="">Género</option>
+                            <option value="Masculino">Masculino</option>
+                            <option value="Femenino">Femenino</option>
+                            <option value="Mixto">Mixto</option>
+                        </select>
+                        <select name="level" required className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde">
+                            <option value="">Nivel</option>
+                            <option value="Primera">Primera</option>
+                            <option value="Juveniles">Juveniles</option>
+                            <option value="Infantiles">Infantiles</option>
+                            <option value="Veteranos">Veteranos</option>
+                            <option value="General">General</option>
+                        </select>
+                        <input name="category" placeholder="Categoría (opcional)" className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde" />
+                        <input name="date" type="date" required className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde" />
+                        <button type="submit" className="md:col-span-2 bg-verde text-white px-6 py-3 rounded-full font-bold hover:bg-verde-oscuro transition text-sm sm:text-base">
                             + Crear Partido
                         </button>
-                        {error && <p className="text-red-500 col-span-1 md:col-span-5">{error}</p>}
+                        {error && <p className="text-red-500 md:col-span-2 text-sm">{error}</p>}
                     </form>
                 )}
             </div>
 
-            {/* Próximo Partido Destacado */}
-            {nextMatch && (
-                <div className="bg-verde text-white p-6 rounded-xl shadow-lg border-2 border-white">
-                    <h2 className="text-sm font-bold uppercase tracking-widest opacity-80 mb-2">🔜 Próximo Partido</h2>
-                    <p className="text-2xl font-bold">
-                        {nextMatch.homeTeam} <span className="text-verde-claro">vs</span> {nextMatch.awayTeam}
+            {/* Bloques HOY y Próximo Partido */}
+            {todayMatches.length > 0 && (
+                <div className="bg-yellow-500 text-white p-5 sm:p-6 rounded-xl shadow-lg border-2 border-yellow-300">
+                    <h2 className="text-sm sm:text-base font-bold uppercase tracking-widest opacity-80 mb-2">🔥 HOY</h2>
+                    {todayMatches.map((match) => (
+                        <div key={match.id} className="mb-2 last:mb-0">
+                            <p className="text-xl sm:text-2xl lg:text-3xl font-bold leading-tight">
+                                {match.homeTeam} <span className="text-yellow-100">vs</span> {match.awayTeam}
+                            </p>
+                            <p className="text-sm sm:text-base opacity-90 mt-1">
+                                📅 {new Date(match.date).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}
+                                {" "}· {match.sport} · {match.gender} · {match.level}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {upcomingMatch && (
+                <div className="bg-verde text-white p-5 sm:p-6 rounded-xl shadow-lg border-2 border-white">
+                    <h2 className="text-sm sm:text-base font-bold uppercase tracking-widest opacity-80 mb-2">🔜 Próximo Partido</h2>
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold leading-tight">
+                        {upcomingMatch.homeTeam} <span className="text-verde-claro">vs</span> {upcomingMatch.awayTeam}
                     </p>
-                    <p className="text-sm opacity-90 mt-1">
-                        📅 {new Date(nextMatch.date).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}
-                        {" "}· {nextMatch.category} · {nextMatch.sport}
+                    <p className="text-sm sm:text-base opacity-90 mt-2">
+                        📅 {new Date(upcomingMatch.date).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}
+                        {" "}· {upcomingMatch.sport} · {upcomingMatch.gender} · {upcomingMatch.level}
                     </p>
                 </div>
             )}
 
-            {/* Solapas */}
-            <div className="flex gap-3 flex-wrap">
+            {/* Tabs */}
+            <div className="flex gap-2 sm:gap-3 flex-wrap">
                 <button onClick={() => handleTabChange("proximos")} className={tabButtonClass("proximos")}>
                     Próximos ({proximos.length})
                 </button>
@@ -387,38 +519,37 @@ export default function FixtureManager({ matches }) {
                 </button>
             </div>
 
-            {/* Buscador y filtro */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            {/* Filtros jerárquicos y búsqueda */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <select value={sportFilter} onChange={handleSportFilterChange} className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde">
+                    <option value="todos">Todos los deportes</option>
+                    {sports.filter(s => s !== "todos").map(s => (
+                        <option key={s} value={s}>{s === "rugby" ? "🏉 Rugby" : s === "hockey" ? "🏑 Hockey" : s}</option>
+                    ))}
+                </select>
+                <select value={genderFilter} onChange={handleGenderFilterChange} disabled={sportFilter === "todos"} className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde disabled:bg-gray-100 disabled:text-gray-400">
+                    <option value="todos">Todos los géneros</option>
+                    {genders.filter(g => g !== "todos").map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+                <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} disabled={genderFilter === "todos"} className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde disabled:bg-gray-100 disabled:text-gray-400">
+                    <option value="todos">Todos los niveles</option>
+                    {levels.filter(l => l !== "todos").map(l => <option key={l} value={l}>{l}</option>)}
+                </select>
                 <input
                     type="text"
                     placeholder="Buscar por equipo..."
                     value={search}
-                    onChange={(e) => {
-                        setSearch(e.target.value);
-                        setVisibleCount(PAGE_SIZE);
-                    }}
-                    className="border border-gray-300 rounded-lg px-3 py-2 flex-1"
+                    onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE); }}
+                    className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde"
                 />
-                <select
-                    value={categoryFilter}
-                    onChange={(e) => {
-                        setCategoryFilter(e.target.value);
-                        setVisibleCount(PAGE_SIZE);
-                    }}
-                    className="border border-gray-300 rounded-lg px-3 py-2"
-                >
-                    {categories.map((cat) => (
-                        <option key={cat} value={cat}>
-                            {cat === "todas" ? "Todas las categorías" : cat}
-                        </option>
-                    ))}
-                </select>
             </div>
 
-            {/* Lista de Partidos */}
+            {/* Lista de partidos */}
             <div className="space-y-4">
                 {visibleList.length === 0 && (
-                    <p className="text-gray-500 text-center py-8">No hay partidos que coincidan con la búsqueda.</p>
+                    <p className="text-gray-500 text-center py-8 text-sm sm:text-base">
+                        No hay partidos que coincidan con los filtros.
+                    </p>
                 )}
                 {visibleList.map((match) => (
                     <MatchRow
@@ -435,12 +566,24 @@ export default function FixtureManager({ matches }) {
                 <div className="text-center">
                     <button
                         onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
-                        className="bg-white border border-gray-300 px-6 py-2 rounded-full font-bold hover:bg-gray-50"
+                        className="bg-white border border-gray-300 px-6 py-2.5 rounded-full font-bold hover:bg-gray-50 transition text-sm sm:text-base"
                     >
                         Cargar más ({filteredList.length - visibleCount} restantes)
                     </button>
                 </div>
             )}
+
+            {/* Modal de confirmación */}
+            <ConfirmModal
+                isOpen={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                onConfirm={confirmDelete}
+                title="Eliminar partido"
+                message="¿Estás seguro de que deseas eliminar este partido? Esta acción no se puede deshacer."
+                confirmText="Eliminar"
+                cancelText="Cancelar"
+                isLoading={isDeleting}
+            />
         </div>
     );
 }

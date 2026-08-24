@@ -63,83 +63,83 @@ export default function NewsForm({ mode, initialData = {} }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 max-w-3xl">
+    <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6 max-w-3xl bg-white p-5 sm:p-8 rounded-xl shadow-sm border border-gray-200">
       <div>
-        <label className="block text-sm font-medium text-gray-700">Título</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
         <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          className="mt-1 block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde focus:border-verde transition"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">Slug (opcional)</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Slug (opcional)</label>
         <input
           type="text"
           value={slug}
           onChange={(e) => setSlug(e.target.value)}
           placeholder="se-genera-automaticamente"
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          className="mt-1 block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde focus:border-verde transition"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">Extracto (resumen)</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Extracto (resumen)</label>
         <textarea
           value={excerpt}
           onChange={(e) => setExcerpt(e.target.value)}
           rows={2}
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          className="mt-1 block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde focus:border-verde transition"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">Contenido (HTML permitido)</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Contenido (HTML permitido)</label>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           rows={6}
           required
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          className="mt-1 block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde focus:border-verde transition"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">Imagen de portada</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Imagen de portada</label>
         <input
           type="file"
           accept="image/*"
           onChange={handleFileChange}
           ref={fileInputRef}
-          className="mt-1 block w-full"
+          className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-verde/10 file:text-verde hover:file:bg-verde/20"
         />
         {coverImageUrl && !coverImage && (
           <div className="mt-2">
-            <img src={coverImageUrl} alt="Portada" className="h-24 w-auto object-cover rounded" />
+            <img src={coverImageUrl} alt="Portada" className="h-24 w-auto object-cover rounded-lg border border-gray-200" />
           </div>
         )}
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">Video (link de Drive)</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Video (link de Drive)</label>
         <input
           type="url"
           value={videoLink}
           onChange={(e) => setVideoLink(e.target.value)}
           placeholder="https://drive.google.com/file/d/..."
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          className="mt-1 block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde focus:border-verde transition"
         />
       </div>
-      <div className="flex gap-4">
+      <div className="flex flex-col sm:flex-row gap-3 pt-2">
         <button
           type="submit"
           disabled={loading}
-          className="bg-verde text-white px-6 py-2 rounded-full hover:bg-verde-oscuro disabled:opacity-50"
+          className="w-full sm:w-auto bg-verde text-white px-6 py-2.5 rounded-full hover:bg-verde-oscuro disabled:opacity-50 disabled:cursor-not-allowed transition text-sm sm:text-base font-medium"
         >
           {loading ? "Guardando..." : mode === "create" ? "Crear" : "Actualizar"}
         </button>
         <button
           type="button"
           onClick={() => router.back()}
-          className="bg-gray-200 text-gray-700 px-6 py-2 rounded-full hover:bg-gray-300"
+          className="w-full sm:w-auto bg-gray-200 text-gray-700 px-6 py-2.5 rounded-full hover:bg-gray-300 transition text-sm sm:text-base font-medium"
         >
           Cancelar
         </button>
