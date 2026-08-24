@@ -1,4 +1,4 @@
-//src/components/admin/FixtureManager.jsx
+// src/components/admin/FixtureManager.jsx
 "use client";
 
 import { useState, useMemo, useRef } from "react";
@@ -11,6 +11,7 @@ import {
     deleteMatchAction,
     bulkCreateMatchesAction,
 } from "@/app/admin/fixture/actions";
+import { getOptimizedCloudinaryUrl } from "@/lib/cloudinary-client";
 
 // ---------- Utilidades ----------
 function isToday(date) {
@@ -65,7 +66,7 @@ function inferGenderAndLevel(match) {
 }
 
 // ---------- Subcomponente: formulario de resultado ----------
-function MatchResultForm({ match }) {
+function MatchResultForm({ match, onCancel }) {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [imageUrl, setImageUrl] = useState(match.imageUrl || "");
@@ -86,44 +87,45 @@ function MatchResultForm({ match }) {
     const homeScore = (homeTries * 5) + (homeConversions * 2) + (homePenalties * 3) + (homeTryPenalties * 8);
     const awayScore = (awayTries * 5) + (awayConversions * 2) + (awayPenalties * 3) + (awayTryPenalties * 8);
 
-const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setUploadingImage(true);
-    setImageError("");
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setUploadingImage(true);
+        setImageError("");
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET);
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET);
 
-    try {
-        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-        const preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+        try {
+            const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+            const preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
-        if (!cloudName || !preset) {
-            throw new Error("Faltan variables de entorno de Cloudinary");
+            if (!cloudName || !preset) {
+                throw new Error("Faltan variables de entorno de Cloudinary");
+            }
+
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+                method: "POST",
+                body: formData,
+            });
+
+            const data = await res.json();
+
+            if (data.secure_url && data.public_id) {
+                // URL optimizada: calidad auto, formato auto (WebP), ancho 800px
+                const optimizedUrl = `https://res.cloudinary.com/${cloudName}/image/upload/q_auto,f_auto,c_scale,w_800/${data.public_id}`;
+                setImageUrl(optimizedUrl);
+            } else {
+                setImageError(data.error?.message || "Error al subir la imagen");
+            }
+        } catch (err) {
+            setImageError(err.message || "Error al conectar con Cloudinary");
+        } finally {
+            setUploadingImage(false);
         }
+    };
 
-        const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-            method: "POST",
-            body: formData,
-        });
-
-        const data = await res.json();
-
-        if (data.secure_url && data.public_id) {
-            // URL optimizada: calidad auto, formato auto (WebP), ancho 800px
-            const optimizedUrl = `https://res.cloudinary.com/${cloudName}/image/upload/q_auto,f_auto,c_scale,w_800/${data.public_id}`;
-            setImageUrl(optimizedUrl);
-        } else {
-            setImageError(data.error?.message || "Error al subir la imagen");
-        }
-    } catch (err) {
-        setImageError(err.message || "Error al conectar con Cloudinary");
-    } finally {
-        setUploadingImage(false);
-    }
-};
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
@@ -144,6 +146,10 @@ const handleImageUpload = async (e) => {
         setIsSubmitting(false);
         if (result?.success) router.refresh();
         else alert(result?.error || "Error al guardar");
+    };
+
+    const handleCancel = () => {
+        if (onCancel) onCancel();
     };
 
     const inputClass = "w-full border border-gray-300 rounded-lg px-3 py-2.5 text-center text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde focus:border-verde transition";
@@ -199,7 +205,7 @@ const handleImageUpload = async (e) => {
             {/* Subida de Imagen con conversión a WebP */}
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">📸 Foto del Partido (opcional, se convertirá a WebP)</label>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                     <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
@@ -210,7 +216,13 @@ const handleImageUpload = async (e) => {
                     </button>
                     <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={handleImageUpload} />
                     {imageUrl && (
-                        <img src={imageUrl} alt="Foto del partido" className="h-16 w-24 object-cover rounded-lg border border-gray-200" />
+                        <div className="w-full sm:w-auto flex-1">
+                            <img
+                                src={getOptimizedCloudinaryUrl(imageUrl, 800)}
+                                alt="Foto del partido"
+                                className="w-full sm:w-64 h-40 object-cover rounded-lg border border-gray-200"
+                            />
+                        </div>
                     )}
                 </div>
                 {imageError && <p className="mt-2 text-red-500 text-sm">{imageError}</p>}
@@ -218,9 +230,22 @@ const handleImageUpload = async (e) => {
 
             <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 pt-2">
                 <p className="text-xs sm:text-sm text-gray-500 text-center sm:text-left">El partido se marcará como finalizado al guardar.</p>
-                <button type="submit" disabled={isSubmitting || uploadingImage} className="w-full sm:w-auto bg-verde text-white px-6 sm:px-8 py-3 rounded-full font-bold shadow-lg hover:bg-verde-oscuro transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">
-                    {isSubmitting ? "Guardando..." : "Guardar Resultado Final"}
-                </button>
+                <div className="flex gap-3 w-full sm:w-auto">
+                    <button
+                        type="button"
+                        onClick={handleCancel}
+                        className="w-full sm:w-auto bg-gray-200 text-gray-700 px-6 py-3 rounded-full font-bold hover:bg-gray-300 transition text-sm sm:text-base"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={isSubmitting || uploadingImage}
+                        className="w-full sm:w-auto bg-verde text-white px-6 py-3 rounded-full font-bold shadow-lg hover:bg-verde-oscuro transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                    >
+                        {isSubmitting ? "Guardando..." : "Guardar Resultado Final"}
+                    </button>
+                </div>
             </div>
         </form>
     );
@@ -229,18 +254,30 @@ const handleImageUpload = async (e) => {
 // ---------- Fila de partido ----------
 function MatchRow({ match, isExpanded, onToggle, onDelete }) {
     const isFinished = match.finished;
+    const optimizedImage = match.imageUrl ? getOptimizedCloudinaryUrl(match.imageUrl, 800) : null;
 
     return (
         <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-gray-200">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h3 className="font-bold text-lg sm:text-xl">
-                        {match.homeTeam} <span className="text-gray-400">vs</span> {match.awayTeam}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                        📅 {new Date(match.date).toLocaleDateString("es-AR", { day: "numeric", month: "long", year: "numeric" })}
-                        {" · "}<span className="uppercase">{match.sport}</span> · {match.gender} · {match.level}
-                    </p>
+                <div className="flex items-start gap-4 flex-1">
+                    {isFinished && optimizedImage && (
+                        <div className="flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden border border-gray-200">
+                            <img
+                                src={optimizedImage}
+                                alt={`${match.homeTeam} vs ${match.awayTeam}`}
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                    )}
+                    <div>
+                        <h3 className="font-bold text-lg sm:text-xl">
+                            {match.homeTeam} <span className="text-gray-400">vs</span> {match.awayTeam}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                            📅 {new Date(match.date).toLocaleDateString("es-AR", { day: "numeric", month: "long", year: "numeric" })}
+                            {" · "}<span className="uppercase">{match.sport}</span> · {match.gender} · {match.level}
+                        </p>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
@@ -260,7 +297,7 @@ function MatchRow({ match, isExpanded, onToggle, onDelete }) {
 
             {isExpanded && (
                 <div className="mt-4 sm:mt-5">
-                    <MatchResultForm match={match} />
+                    <MatchResultForm match={match} onCancel={onToggle} />
                 </div>
             )}
         </div>
