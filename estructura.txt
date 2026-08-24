@@ -166,3 +166,59 @@ No se usa TypeScript, todo está escrito en JSX.
 Las reglas de seguridad de Firestore deben configurarse para permitir acceso según el rol del usuario (se recomienda usar Claims personalizados).
 
 El despliegue se hará en Vercel, aprovechando las variables de entorno y la integración continua.
+
+
+
+
+
+================================================================================
+CONTEXTO DEL PROYECTO "CURIYÚ" - NEXT.JS 16 / FIREBASE / VERCEL
+================================================================================
+
+**1. TECNOLOGÍAS PRINCIPALES**
+- Framework: Next.js 16.3.1 (App Router, Turbopack).
+- Base de datos: Firestore (Firebase).
+- Autenticación: Firebase Auth (Cliente) y Firebase Admin SDK (Servidor).
+- Imágenes: Cloudinary (configurado en `next.config.mjs`).
+- Hosting: Vercel.
+- UI: Tailwind CSS, con colores personalizados (`verde`, `verde-oscuro`, `verde-suave`, `oscuro`).
+
+**2. ESTRUCTURA DE CARPETAS CLAVE**
+- `src/app/page.jsx` (Home público - últimas 3 noticias).
+- `src/app/layout.jsx` (Layout raíz).
+- `src/app/admin/page.jsx` (Dashboard admin).
+- `src/app/admin/layout.jsx` (Protección de rutas admin, verifica cookies y roles).
+- `src/app/admin/noticias/page.jsx` (Listado de noticias admin).
+- `src/app/admin/noticias/actions.js` (Server Action para eliminar noticias).
+- `src/app/admin/usuarios/page.jsx` (Gestión de usuarios y roles).
+- `src/app/admin/fixture/page.jsx` (Gestión de partidos y resultados).
+- `src/app/noticias/page.jsx` (Listado público de noticias).
+- `src/app/noticias/[slug]/page.jsx` (Detalle de noticia, con metadatos SEO y botón compartir).
+- `src/app/api/session/route.js` (Crea la cookie de sesión).
+- `src/components/admin/AdminSidebar.jsx` (Menú lateral con filtrado por roles).
+- `src/components/admin/NewsList.jsx` (Tabla de noticias admin).
+- `src/components/news/NewsGrid.jsx` (Grid público de noticias).
+- `src/lib/firebase/news.js` (Funciones CRUD para noticias).
+- `src/lib/firebase/admin.js` (Inicialización de Firebase Admin).
+- `src/lib/firebase/config.js` (Configuración del Firebase Client SDK).
+
+**3. SOLUCIONES CRÍTICAS IMPLEMENTADAS (ERRORES YA RESUELTOS)**
+
+**A. Bucle Infinito de Renderizado en Admin**
+- Causa: Página leía `cookies()` y verificaba sesión, re-renderizando constantemente.
+- Solución: MOVER TODA la lógica de autenticación SOLO al `layout.jsx` del admin. La página `page.jsx` solo obtiene datos de Firestore.
+- Regla de oro: Nunca usar `cookies()` en una página hija si el layout ya la está usando para protegerla.
+
+**B. Error "Only plain objects can be passed to Client Components..."**
+- Causa: Timestamps de Firestore (objetos complejos) pasados directamente a componentes cliente.
+- Solución: SIEMPRE convertir fechas en el servidor antes de pasarlas a props. Usar `item.publishedAt?.toDate?.() ? item.publishedAt.toDate().toISOString() : ...`.
+
+**C. Error en Next.js 15/16: "params is a Promise"**
+- Causa: En Next.js 15/16, `params` (o `searchParams`) en Server Components son Promesas.
+- Solución: Siempre hacer `const { slug } = await params;` dentro de componentes y `generateMetadata`.
+
+**D. Error en Vercel: 500 en `/api/session` + "Unexpected end of JSON input"**
+- Causa raíz (finalmente resuelta): Conflicto ESM/CommonJS (`ERR_REQUIRE_ESM`) entre `firebase-admin` y la librería `jose` al compilar con Turbopack.
+- Solución en `next.config.mjs`:
+  ```javascript
+  serverExternalPackages: ['firebase-admin', 'jwks-rsa'],
