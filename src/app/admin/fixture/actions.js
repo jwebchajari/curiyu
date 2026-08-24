@@ -7,9 +7,7 @@ import { deleteFromCloudinary } from "@/lib/cloudinary-server";
 // Función auxiliar para convertir fecha DD-MM-AAAA a Date
 function parseDateFromString(dateStr) {
   if (!dateStr) return new Date();
-  // Si viene en formato ISO, devolver directamente
   if (dateStr.includes("T")) return new Date(dateStr);
-  // Si viene en DD-MM-AAAA
   const [day, month, year] = dateStr.split("-").map(Number);
   if (isNaN(day) || isNaN(month) || isNaN(year)) return new Date();
   return new Date(year, month - 1, day);
@@ -84,7 +82,6 @@ export async function updateMatchResultAction(matchId, data) {
 
 export async function deleteMatchAction(matchId) {
   try {
-    // Obtener el partido para conocer su imageUrl
     const docRef = adminDb.collection("matches").doc(matchId);
     const doc = await docRef.get();
 
@@ -97,13 +94,11 @@ export async function deleteMatchAction(matchId) {
             await deleteFromCloudinary(publicId);
           } catch (imgError) {
             console.error("Error eliminando imagen de Cloudinary:", imgError);
-            // Continuamos con la eliminación del partido aunque falle la imagen
           }
         }
       }
     }
 
-    // Eliminar el partido de Firestore
     await docRef.delete();
     revalidatePath("/admin/fixture");
     return { success: true };

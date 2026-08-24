@@ -13,6 +13,7 @@ import MatchDetail from "@/components/fixture/MatchDetail";
 import PageHeader from "@/components/layout/PageHeader";
 import { notFound } from "next/navigation";
 import Image from "next/image";
+import { getOptimizedUrlFromUrl } from "@/lib/cloudinary-server"; // <-- Importación agregada
 
 export const dynamic = "force-dynamic";
 

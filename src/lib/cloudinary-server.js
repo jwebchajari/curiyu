@@ -13,6 +13,11 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+/**
+ * Elimina una imagen de Cloudinary por public_id.
+ * @param {string} publicId - Identificador público de la imagen.
+ * @returns {Promise<object>} Resultado de la operación.
+ */
 export async function deleteFromCloudinary(publicId) {
   try {
     const result = await cloudinary.uploader.destroy(publicId);
@@ -23,6 +28,12 @@ export async function deleteFromCloudinary(publicId) {
   }
 }
 
+/**
+ * Genera una URL optimizada a partir de un public_id.
+ * @param {string} publicId - Identificador público de la imagen.
+ * @param {object} options - Opciones de transformación.
+ * @returns {string} URL optimizada.
+ */
 export function getOptimizedUrl(publicId, options = {}) {
   return cloudinary.url(publicId, {
     fetch_format: "auto",
@@ -33,6 +44,12 @@ export function getOptimizedUrl(publicId, options = {}) {
   });
 }
 
+/**
+ * Convierte una URL completa de Cloudinary a una URL optimizada.
+ * @param {string} url - URL original de Cloudinary.
+ * @param {object} options - Opciones de transformación.
+ * @returns {string} URL optimizada o la original si no es de Cloudinary.
+ */
 export function getOptimizedUrlFromUrl(url, options = {}) {
   if (!url || !url.includes("res.cloudinary.com")) return url;
   const parts = url.split("/image/upload/");
@@ -41,3 +58,5 @@ export function getOptimizedUrlFromUrl(url, options = {}) {
   const publicId = publicIdWithVersion.replace(/^v\d+\//, "");
   return getOptimizedUrl(publicId, options);
 }
+
+

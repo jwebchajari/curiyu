@@ -252,7 +252,9 @@ function MatchResultForm({ match, onCancel }) {
 // ---------- Fila de partido ----------
 function MatchRow({ match, isExpanded, onToggle, onDelete }) {
     const isFinished = match.finished;
-    const imageUrl = match.imageUrl || "/logo2.png";
+    // Seleccionar imagen por defecto según estado
+    const fallbackImage = isFinished ? "/fin.png" : "/proximo.png";
+    const imageUrl = match.imageUrl || fallbackImage;
     const optimizedImage = getOptimizedCloudinaryUrl(imageUrl, 400);
 
     return (

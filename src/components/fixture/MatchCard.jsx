@@ -1,16 +1,14 @@
 /**
  * Ruta: src/components/fixture/MatchCard.jsx
  * Resumen: Tarjeta resumida de partido, enlazada a la página de detalle.
- * Lógica: Componente de servidor (sin hooks). Verifica que `match.id` exista antes de crear
- *         el Link. Muestra imagen (imageUrl o logo2.png), badge de deporte con colores/iconos,
- *         fecha, categoría, equipos, marcador con resaltado de Curiyú y enlace "Ver más".
- *         No expande; navega a `/fixture/[id]`.
- * Debería: Mostrar un resumen atractivo y permitir al usuario ir al detalle del partido.
+ * Lógica: Componente de servidor. Muestra imagen (imageUrl optimizada si es de Cloudinary,
+ *         o fallback /fin.png para finalizados y /proximo.png para próximos).
+ *         Muestra badge de deporte, fecha, equipos, marcador y enlace "Ver más".
+ * Debería: Mostrar un resumen atractivo y navegar a `/fixture/[id]`.
  */
-
 import Link from "next/link";
+import { getOptimizedCloudinaryUrl } from "@/lib/cloudinary-client";
 
-// Nombres posibles del club para identificar si un equipo es Curiyú.
 const CURIYU_NAMES = ["curiyú", "curiyu", "club curiyú"];
 
 function isCuriyu(teamName) {
@@ -22,16 +20,20 @@ function isCuriyu(teamName) {
 export default function MatchCard({ match }) {
   const homeIsCuriyu = isCuriyu(match.homeTeam);
   const awayIsCuriyu = isCuriyu(match.awayTeam);
-  const imageUrl =
-    match.imageUrl && match.imageUrl !== "" ? match.imageUrl : "/logo2.png";
 
-  // Evitar enlaces inválidos si falta el id
+  // Determinar imagen
+  const fallbackImage = match.finished ? "/fin.png" : "/proximo.png";
+  const rawImage = match.imageUrl && match.imageUrl !== "" ? match.imageUrl : fallbackImage;
+  const imageUrl = getOptimizedCloudinaryUrl(rawImage, 800);
+
   const href = match.id ? `/fixture/${match.id}` : "#";
 
-  // Contenido interno de la tarjeta (se usa tanto si hay link como si no)
-  const cardContent = (
-    <>
-      {/* Imagen y badge de deporte */}
+  return (
+    <Link
+      href={href}
+      className="group flex flex-col rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+    >
+      {/* Imagen */}
       <div className="relative h-40 w-full overflow-hidden">
         <img
           src={imageUrl}
@@ -39,6 +41,7 @@ export default function MatchCard({ match }) {
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
         />
+        {/* Badge de deporte */}
         <div className="absolute top-2 left-2">
           {match.sport === "rugby" ? (
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/60 text-white text-xs font-semibold backdrop-blur-sm">
@@ -52,14 +55,11 @@ export default function MatchCard({ match }) {
         </div>
       </div>
 
-      {/* Cuerpo */}
+      {/* Contenido */}
       <div className="p-4 flex flex-col flex-1 bg-white dark:bg-slate-800">
         <div className="flex items-center justify-between mb-2">
           <time className="text-xs text-gray-500 dark:text-gray-400">
-            {new Intl.DateTimeFormat("es-AR", {
-              day: "2-digit",
-              month: "short",
-            }).format(new Date(match.date))}
+            {new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "short" }).format(new Date(match.date))}
           </time>
           {match.category && (
             <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-200">
@@ -105,24 +105,6 @@ export default function MatchCard({ match }) {
           <span className="text-xs font-medium text-primary">Ver más →</span>
         </div>
       </div>
-    </>
-  );
-
-  // Si no tiene id, se renderiza sin enlace (por seguridad)
-  if (!match.id) {
-    return (
-      <div className="group flex flex-col rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-        {cardContent}
-      </div>
-    );
-  }
-
-  return (
-    <Link
-      href={href}
-      className="group flex flex-col rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-    >
-      {cardContent}
     </Link>
   );
 }
