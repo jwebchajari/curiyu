@@ -27,23 +27,14 @@ function serializeMatch(doc) {
 // Función auxiliar para obtener la imagen correcta según estado y URL
 function getMatchImage(match, baseUrl) {
   if (match.imageUrl && match.imageUrl !== "") {
-    if (match.imageUrl.includes("res.cloudinary.com")) {
-      return getOptimizedUrlFromUrl(match.imageUrl, {
-        width: 1200,
-        height: 630,
-        crop: "fill",
-        fetch_format: "auto",
-        quality: "auto",
-      });
-    } else {
-      return match.imageUrl.startsWith("http")
-        ? match.imageUrl
-        : `${baseUrl}${match.imageUrl}`;
+    if (match.imageUrl.startsWith("/")) {
+      return `${baseUrl}${match.imageUrl}`;
     }
+    return match.imageUrl;
   }
-  // Si no hay imagen, usar fin.png o proximo.png según finished
   return match.finished ? `${baseUrl}/fin.png` : `${baseUrl}/proximo.png`;
 }
+
 
 export async function generateMetadata({ params }) {
   // Usar localhost para desarrollo si no hay variable de entorno
