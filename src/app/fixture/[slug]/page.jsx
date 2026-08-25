@@ -6,8 +6,8 @@
 import { adminDb } from "@/lib/firebase/admin";
 import MatchDetail from "@/components/fixture/MatchDetail";
 import PageHeader from "@/components/layout/PageHeader";
+import { notFound } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
 import { getOptimizedUrlFromUrl } from "@/lib/cloudinary-server";
 
 export const dynamic = "force-dynamic";
@@ -93,61 +93,25 @@ export default async function MatchDetailPage({ params }) {
   const resolvedParams = await params;
   const slug = resolvedParams?.slug;
 
-  if (!slug) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-800 mb-4">Partido no encontrado</h1>
-          <Link
-            href="/fixture"
-            className="inline-block bg-verde text-white font-semibold py-2 px-6 rounded-full hover:bg-verde-oscuro transition-colors"
-          >
-            Volver al fixture
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  if (!slug) notFound();
 
   let match = null;
   try {
     const docSnap = await adminDb.collection("matches").doc(slug).get();
-    if (!docSnap.exists) {
-      return (
-        <div className="min-h-screen bg-white flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-800 mb-4">Partido no encontrado</h1>
-            <Link
-              href="/fixture"
-              className="inline-block bg-verde text-white font-semibold py-2 px-6 rounded-full hover:bg-verde-oscuro transition-colors"
-            >
-              Volver al fixture
-            </Link>
-          </div>
-        </div>
-      );
-    }
+    if (!docSnap.exists) notFound();
     match = serializeMatch(docSnap);
   } catch (error) {
     console.error("Error cargando partido:", error);
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-800 mb-4">Error al cargar el partido</h1>
-          <Link
-            href="/fixture"
-            className="inline-block bg-verde text-white font-semibold py-2 px-6 rounded-full hover:bg-verde-oscuro transition-colors"
-          >
-            Volver al fixture
-          </Link>
-        </div>
-      </div>
-    );
+    notFound();
   }
 
-  // Imagen para el render: usamos la misma función de imagen optimizada
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://clubcuriyu.com";
-  const imageUrl = getMatchImage(match, baseUrl);
+  // Imagen para el render (relativa o absoluta según necesidad)
+  const imageUrl =
+    match.imageUrl && match.imageUrl !== ""
+      ? match.imageUrl
+      : match.finished
+        ? "/fin.png"
+        : "/proximo.png";
 
   return (
     <div className="min-h-screen bg-white">
