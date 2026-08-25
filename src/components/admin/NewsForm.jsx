@@ -3,8 +3,8 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { createNews, updateNews } from "@/lib/firebase/news";
-import { uploadNewsImage } from "@/lib/firebase/storage";
+import { createNewsAction, updateNewsAction } from "@/app/admin/noticias/actions";
+import { uploadNewsImage } from "@/lib/firebase/storage"; // Asumiendo que usa Firebase Client
 
 export default function NewsForm({ mode, initialData = {} }) {
   const router = useRouter();
@@ -48,9 +48,9 @@ export default function NewsForm({ mode, initialData = {} }) {
         coverImageUrl: imageUrl,
       };
       if (mode === "create") {
-        await createNews(data);
+        await createNewsAction(data);
       } else {
-        await updateNews(initialData.id, data);
+        await updateNewsAction(initialData.id, data);
       }
       router.push("/admin/noticias/listar");
       router.refresh();
@@ -64,6 +64,7 @@ export default function NewsForm({ mode, initialData = {} }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6 max-w-3xl bg-white p-5 sm:p-8 rounded-xl shadow-sm border border-gray-200">
+      {/* ... resto del formulario exactamente igual ... */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
         <input

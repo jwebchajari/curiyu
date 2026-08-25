@@ -21,11 +21,13 @@ function serializeMatch(doc) {
   };
 }
 
-// Metadatos dinámicos (igual que antes)
+// Metadatos dinámicos (corregido: searchParams es una Promise)
 export async function generateMetadata({ searchParams }) {
+  // ✅ Resolver la promesa
+  const params = await searchParams;
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://clubcuriyu.com";
-  const sport = searchParams?.deporte === "hockey" ? "hockey" : "rugby";
-  const matchId = searchParams?.match;
+  const sport = params?.deporte === "hockey" ? "hockey" : "rugby";
+  const matchId = params?.match;
 
   const defaultMetadata = {
     title: "Fixture | Club Curiyú",
@@ -84,18 +86,20 @@ export async function generateMetadata({ searchParams }) {
   }
 }
 
+// Página principal (corregido: searchParams es una Promise)
 export default async function FixturePage({ searchParams }) {
-  const sportParam = searchParams?.deporte;
+  // ✅ Resolver la promesa
+  const params = await searchParams;
+  const sportParam = params?.deporte;
   const sport = sportParam === "hockey" ? "hockey" : "rugby";
   const now = new Date();
 
   let allMatches = [];
 
   try {
-    // Obtenemos todos los partidos (sin filtros de fecha) para poder separar en cliente
     const snapshot = await adminDb
       .collection("matches")
-      .orderBy("date", "desc") // orden descendente para tener los más recientes primero
+      .orderBy("date", "desc")
       .get();
 
     allMatches = snapshot.docs.map(serializeMatch);
@@ -103,10 +107,8 @@ export default async function FixturePage({ searchParams }) {
     console.error("Error cargando partidos:", error);
   }
 
-  // Filtramos por deporte en el servidor (para reducir datos)
   const matchesBySport = allMatches.filter((m) => m.sport === sport);
 
-  // Separamos en próximos (no finalizados) y finalizados
   const upcoming = matchesBySport
     .filter((m) => !m.finished)
     .sort((a, b) => new Date(a.date) - new Date(b.date));

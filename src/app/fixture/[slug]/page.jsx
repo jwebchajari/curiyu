@@ -24,6 +24,27 @@ function serializeMatch(doc) {
   };
 }
 
+// Función auxiliar para obtener la imagen correcta según estado y URL
+function getMatchImage(match, baseUrl) {
+  if (match.imageUrl && match.imageUrl !== "") {
+    if (match.imageUrl.includes("res.cloudinary.com")) {
+      return getOptimizedUrlFromUrl(match.imageUrl, {
+        width: 1200,
+        height: 630,
+        crop: "fill",
+        fetch_format: "auto",
+        quality: "auto",
+      });
+    } else {
+      return match.imageUrl.startsWith("http")
+        ? match.imageUrl
+        : `${baseUrl}${match.imageUrl}`;
+    }
+  }
+  // Si no hay imagen, usar fin.png o proximo.png según finished
+  return match.finished ? `${baseUrl}/fin.png` : `${baseUrl}/proximo.png`;
+}
+
 export async function generateMetadata({ params }) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://clubcuriyu.com";
   try {
@@ -37,26 +58,10 @@ export async function generateMetadata({ params }) {
     const match = serializeMatch(docSnap);
     const sportLabel = match.sport === "hockey" ? "Hockey" : "Rugby";
     const title = `${match.homeTeam} vs ${match.awayTeam} | ${sportLabel} | Club Curiyú`;
-    const description = `Partido de ${sportLabel} en el Club Curiyú. ${match.finished ? `Resultado: ${match.homeScore} - ${match.awayScore}` : "Próximo partido"}`;
+    const description = `Partido de ${sportLabel} en el Club Curiyú. ${match.finished ? `Resultado: ${match.homeScore} - ${match.awayScore}` : "Próximo partido"
+      }`;
 
-    let imageUrl;
-    if (match.imageUrl && match.imageUrl !== "") {
-      if (match.imageUrl.includes("res.cloudinary.com")) {
-        imageUrl = getOptimizedUrlFromUrl(match.imageUrl, {
-          width: 1200,
-          height: 630,
-          crop: "fill",
-          fetch_format: "auto",
-          quality: "auto",
-        });
-      } else {
-        imageUrl = match.imageUrl.startsWith("http")
-          ? match.imageUrl
-          : `${baseUrl}${match.imageUrl}`;
-      }
-    } else {
-      imageUrl = `${baseUrl}/logo2.png`;
-    }
+    const imageUrl = getMatchImage(match, baseUrl);
 
     return {
       title,
@@ -100,7 +105,13 @@ export default async function MatchDetailPage({ params }) {
     notFound();
   }
 
-  const imageUrl = match.imageUrl && match.imageUrl !== "" ? match.imageUrl : "/logo2.png";
+  // Imagen para el render (relativa o absoluta según necesidad)
+  const imageUrl =
+    match.imageUrl && match.imageUrl !== ""
+      ? match.imageUrl
+      : match.finished
+        ? "/fin.png"
+        : "/proximo.png";
 
   return (
     <div className="min-h-screen bg-white">
