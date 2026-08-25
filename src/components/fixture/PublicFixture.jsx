@@ -4,6 +4,7 @@
  * Lógica: Recibe `sport`, `played`, `upcoming`. Las solapas son Links con query param.
  *         Solo renderiza secciones si hay datos. Estilos modernos con Tailwind.
  * Debería: Mostrar la categoría activa con sus partidos, con aspecto atractivo y responsive.
+ * Estilo: Fondo blanco, sin modo oscuro.
  */
 import Link from "next/link";
 import MatchCard from "./MatchCard";
@@ -33,8 +34,8 @@ export default function PublicFixture({ sport, played, upcoming }) {
               className={[
                 "inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 text-black",
                 isActive
-                  ? "bg-white border-2 border-primary shadow-lg scale-105"
-                  : "bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-700",
+                  ? "bg-white border-2 border-green-700 shadow-lg scale-105"
+                  : "bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300",
               ].join(" ")}
             >
               <span aria-hidden="true" className="text-base">{tab.icon}</span>
@@ -44,12 +45,12 @@ export default function PublicFixture({ sport, played, upcoming }) {
         })}
       </div>
 
-      {/* Últimos partidos */}
+      {/* Últimos partidos (jugados) */}
       <section aria-label={`Últimos partidos de ${sport}`}>
         {played.length > 0 ? (
           <>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-              <span className="text-primary">●</span> Últimos partidos
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <span className="text-green-700">●</span> Últimos partidos
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {played.map((match) => (
@@ -58,7 +59,7 @@ export default function PublicFixture({ sport, played, upcoming }) {
             </div>
           </>
         ) : (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+          <div className="text-center py-8 text-gray-500">
             No hay partidos jugados aún.
           </div>
         )}
@@ -68,8 +69,8 @@ export default function PublicFixture({ sport, played, upcoming }) {
       <section aria-label={`Próximos partidos de ${sport}`}>
         {upcoming.length > 0 ? (
           <>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-              <span className="text-primary">●</span> Próximos partidos
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <span className="text-green-700">●</span> Próximos partidos
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {upcoming.map((match) => (
@@ -78,7 +79,7 @@ export default function PublicFixture({ sport, played, upcoming }) {
             </div>
           </>
         ) : (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+          <div className="text-center py-8 text-gray-500">
             No hay próximos partidos.
           </div>
         )}

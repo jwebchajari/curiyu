@@ -1,21 +1,12 @@
 /**
  * Ruta: src/app/noticias/page.jsx
- * Resumen: Listado público de noticias del club.
- * Lógica: Trae todas las noticias, formatea fechas a es-AR, y las pasa a
- *         NewsGrid. Usa PageHeader con el slot `action` para el subtítulo
- *         que antes iba en un flex aparte.
- * Debería: Mantenerse razonablemente actualizada sin pegarle a Firestore en
- *         cada request — por eso usa ISR (`revalidate`) en vez de estático
- *         puro o `force-dynamic`.
+ * Resumen: Listado público de noticias con fondo blanco y manejo de estado vacío.
+ * Estilo: Fondo blanco, sin gradientes.
  */
 import { getAllNews } from "@/lib/firebase/news";
 import NewsGrid from "@/components/news/NewsGrid";
 import PageHeader from "@/components/layout/PageHeader";
 
-// ISR: revalida cada 5 min. Las noticias no cambian segundo a segundo como
-// el fixture, así que no hace falta `force-dynamic` acá — esto permite que
-// Next sirva la página cacheada y la refresque en background (mejor Core
-// Web Vitals que recalcular todo en cada visita).
 export const revalidate = 300;
 
 export const metadata = {
@@ -40,6 +31,9 @@ export const metadata = {
 export default async function NoticiasPage() {
     const rawNews = await getAllNews();
 
+    // Depuración: muestra en consola del servidor cuántas noticias se obtuvieron
+    console.log(`[NoticiasPage] ${rawNews.length} noticias obtenidas`);
+
     const news = rawNews.map((item) => ({
         ...item,
         publishedAt: item.publishedAt?.toDate?.()
@@ -51,13 +45,23 @@ export default async function NoticiasPage() {
     }));
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-10 md:py-16">
-            <PageHeader
-                eyebrow="Club Curiyú"
-                title="Noticias"
-                action={<p>Mantenete al día con la vida del club</p>}
-            />
-            <NewsGrid news={news} />
+        <div className="min-h-screen bg-white">
+            <div className="max-w-7xl mx-auto px-4 py-10 md:py-16">
+                <PageHeader
+                    eyebrow="Club Curiyú"
+                    title="Noticias"
+                    action={<p className="text-white/80">Mantenete al día con la vida del club</p>}
+                />
+
+                {news.length === 0 ? (
+                    <div className="text-center py-16 bg-gray-50 rounded-2xl border border-gray-200">
+                        <p className="text-xl text-gray-600">📭 No hay noticias publicadas aún.</p>
+                        <p className="text-sm text-gray-400 mt-2">Pronto compartiremos novedades.</p>
+                    </div>
+                ) : (
+                    <NewsGrid news={news} />
+                )}
+            </div>
         </div>
     );
 }

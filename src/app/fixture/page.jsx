@@ -1,11 +1,7 @@
 /**
  * Ruta: src/app/fixture/page.jsx
- * Resumen: Página pública de fixture con solapas por deporte y metadatos dinámicos para compartir partido.
- * Lógica: Lee `deporte` de query params. Si llega `match`, consulta ese partido para generar
- *         og:image y título personalizado en el link compartido.
- *         Usa `force-dynamic` y serializa Timestamps. Fondo decorativo.
- * Debería: Mostrar la categoría activa con partidos recientes y próximos, y al compartir un
- *          partido específico, el preview muestra su imagen y datos.
+ * Resumen: Página pública de fixture con solapas por deporte y metadatos dinámicos.
+ * Estilo: Fondo blanco, sin gradientes ni modo oscuro.
  */
 import { adminDb } from "@/lib/firebase/admin";
 import PublicFixture from "@/components/fixture/PublicFixture";
@@ -25,21 +21,18 @@ function serializeMatch(doc) {
   };
 }
 
-// Genera metadatos dinámicos para compartir partido específico
+// Metadatos (igual que antes)
 export async function generateMetadata({ searchParams }) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://clubcuriyu.com";
   const sport = searchParams?.deporte === "hockey" ? "hockey" : "rugby";
   const matchId = searchParams?.match;
 
-  // Metadata por defecto
   const defaultMetadata = {
     title: "Fixture | Club Curiyú",
-    description:
-      "Próximos partidos y resultados de Rugby y Hockey del Club Curiyú de Chajarí, Entre Ríos.",
+    description: "Próximos partidos y resultados de Rugby y Hockey del Club Curiyú de Chajarí, Entre Ríos.",
     openGraph: {
       title: "Fixture | Club Curiyú",
-      description:
-        "Próximos partidos y resultados de Rugby y Hockey del Club Curiyú de Chajarí, Entre Ríos.",
+      description: "Próximos partidos y resultados de Rugby y Hockey del Club Curiyú de Chajarí, Entre Ríos.",
       type: "website",
       url: `${baseUrl}/fixture?deporte=${sport}`,
       images: [{ url: `${baseUrl}/logo2.png`, width: 1200, height: 630, alt: "Club Curiyú" }],
@@ -61,9 +54,7 @@ export async function generateMetadata({ searchParams }) {
     const match = serializeMatch(docSnap);
     const sportLabel = match.sport === "hockey" ? "Hockey" : "Rugby";
     const title = `${match.homeTeam} vs ${match.awayTeam} | ${sportLabel} | Club Curiyú`;
-    const description = `Partido de ${sportLabel} en el Club Curiyú. ${
-      match.finished ? `Resultado: ${match.homeScore} - ${match.awayScore}` : "Próximo partido"
-    }`;
+    const description = `Partido de ${sportLabel} en el Club Curiyú. ${match.finished ? `Resultado: ${match.homeScore} - ${match.awayScore}` : "Próximo partido"}`;
     const imageUrl = match.imageUrl && match.imageUrl !== "" ? match.imageUrl : `${baseUrl}/logo2.png`;
 
     return {
@@ -98,7 +89,6 @@ export default async function FixturePage({ searchParams }) {
   let upcoming = [];
 
   try {
-    // SOLUCIÓN TEMPORAL: sin filtro por sport por falta de índice compuesto
     const [playedSnap, upcomingSnap] = await Promise.all([
       adminDb
         .collection("matches")
@@ -128,7 +118,7 @@ export default async function FixturePage({ searchParams }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
+    <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-4 py-10 md:py-16">
         <PageHeader eyebrow="Rugby y Hockey" title="Fixture" />
         <PublicFixture sport={sport} played={played} upcoming={upcoming} />

@@ -1,109 +1,68 @@
 // src/lib/firebase/news.js
-import { db } from "./config";
-import {
-	collection,
-	addDoc,
-	getDocs,
-	getDoc,
-	doc,
-	updateDoc,
-	deleteDoc,
-	query,
-	orderBy,
-	where,
-	limit,
-	Timestamp,
-} from "firebase/firestore";
+import { adminDb } from "./admin";
 
 const COLLECTION = "news";
 
-export async function createNews(data) {
-	try {
-		const docRef = await addDoc(collection(db, COLLECTION), {
-			...data,
-			publishedAt: Timestamp.now(),
-			updatedAt: Timestamp.now(),
-		});
-		return { id: docRef.id, ...data };
-	} catch (error) {
-		throw error;
-	}
-}
-
+/**
+ * Obtiene todas las noticias ordenadas por fecha de publicación descendente.
+ * @returns {Promise<Array>} Array de documentos con id incluido.
+ */
 export async function getAllNews() {
 	try {
-		const q = query(
-			collection(db, COLLECTION),
-			orderBy("publishedAt", "desc"),
+		const snapshot = await adminDb
+			.collection(COLLECTION)
+			.orderBy("publishedAt", "desc")
+			.get();
+
+		console.log(
+			`[getAllNews] ${snapshot.docs.length} documentos encontrados`,
 		);
-		const snapshot = await getDocs(q);
 
-		const news = snapshot.docs.map((doc) => {
-			const data = doc.data();
-			return {
-				id: doc.id,
-				...data,
-			};
-		});
-
-		return news;
+		return snapshot.docs.map((doc) => ({
+			id: doc.id,
+			...doc.data(),
+		}));
 	} catch (error) {
+		console.error("[getAllNews] Error al obtener noticias:", error);
 		return [];
 	}
 }
 
+/**
+ * Obtiene una noticia por su ID.
+ * @param {string} id - ID del documento.
+ * @returns {Promise<Object|null>} Datos de la noticia o null.
+ */
 export async function getNewsById(id) {
 	try {
-		const docRef = doc(db, COLLECTION, id);
-		const docSnap = await getDoc(docRef);
-		if (!docSnap.exists()) {
-			return null;
-		}
+		const docRef = adminDb.collection(COLLECTION).doc(id);
+		const docSnap = await docRef.get();
+		if (!docSnap.exists) return null;
 		return { id: docSnap.id, ...docSnap.data() };
 	} catch (error) {
+		console.error("[getNewsById] Error:", error);
 		return null;
 	}
 }
 
+/**
+ * Obtiene una noticia por su slug.
+ * @param {string} slug - Slug de la noticia.
+ * @returns {Promise<Object|null>} Datos de la noticia o null.
+ */
 export async function getNewsBySlug(slug) {
 	try {
-		const q = query(
-			collection(db, COLLECTION),
-			where("slug", "==", slug),
-			limit(1),
-		);
-		const snapshot = await getDocs(q);
+		const snapshot = await adminDb
+			.collection(COLLECTION)
+			.where("slug", "==", slug)
+			.limit(1)
+			.get();
 
-		if (snapshot.empty) {
-			return null;
-		}
-
-		const docSnap = snapshot.docs[0];
-		return { id: docSnap.id, ...docSnap.data() };
+		if (snapshot.empty) return null;
+		const doc = snapshot.docs[0];
+		return { id: doc.id, ...doc.data() };
 	} catch (error) {
+		console.error("[getNewsBySlug] Error:", error);
 		return null;
-	}
-}
-
-export async function updateNews(id, data) {
-	try {
-		const docRef = doc(db, COLLECTION, id);
-		await updateDoc(docRef, {
-			...data,
-			updatedAt: Timestamp.now(),
-		});
-		return { id, ...data };
-	} catch (error) {
-		throw error;
-	}
-}
-
-export async function deleteNews(id) {
-	try {
-		const docRef = doc(db, COLLECTION, id);
-		await deleteDoc(docRef);
-		return true;
-	} catch (error) {
-		throw error;
 	}
 }

@@ -82,12 +82,12 @@ export default function MatchDetail({ match }) {
   };
 
   const isRugby = match.sport === "rugby";
-  const sportBadgeClass = isRugby ? "bg-green-900 text-white" : "bg-white text-green-700 border border-green-600";
+  const sportBadgeClass = isRugby ? "bg-green-800 text-white" : "bg-white text-green-700 border border-green-600";
   const sportIcon = isRugby ? "🏉" : "🏑";
   const sportLabel = isRugby ? "Rugby" : "Hockey";
 
   return (
-    <article className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl overflow-hidden">
+    <article className="bg-white rounded-3xl shadow-2xl overflow-hidden">
       <div className="p-6 sm:p-10">
         {match.category && (
           <div className="mb-4 flex items-center gap-2">
@@ -95,7 +95,7 @@ export default function MatchDetail({ match }) {
               <span aria-hidden="true">{sportIcon}</span>
               {sportLabel}
             </span>
-            <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-200">
+            <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-gray-100 text-gray-700">
               {match.category}
             </span>
           </div>
@@ -103,7 +103,7 @@ export default function MatchDetail({ match }) {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 mb-8">
           <div className="text-center flex-1">
-            <h1 className="text-xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
+            <h1 className="text-xl sm:text-3xl font-extrabold text-gray-900">
               {match.homeTeam}
             </h1>
             {homeIsCuriyu && (
@@ -115,13 +115,13 @@ export default function MatchDetail({ match }) {
               {homeIsCuriyu ? (
                 <span className="text-green-600">{match.homeScore}</span>
               ) : (
-                <span className="text-gray-900 dark:text-white">{match.homeScore}</span>
+                <span className="text-gray-900">{match.homeScore}</span>
               )}
-              <span className="text-gray-300 dark:text-gray-500 mx-2 sm:mx-4">-</span>
+              <span className="text-gray-300 mx-2 sm:mx-4">-</span>
               {awayIsCuriyu ? (
                 <span className="text-green-600">{match.awayScore}</span>
               ) : (
-                <span className="text-gray-900 dark:text-white">{match.awayScore}</span>
+                <span className="text-gray-900">{match.awayScore}</span>
               )}
             </p>
             {match.finished && (
@@ -136,7 +136,7 @@ export default function MatchDetail({ match }) {
             )}
           </div>
           <div className="text-center flex-1">
-            <h1 className="text-xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
+            <h1 className="text-xl sm:text-3xl font-extrabold text-gray-900">
               {match.awayTeam}
             </h1>
             {awayIsCuriyu && (
@@ -147,54 +147,54 @@ export default function MatchDetail({ match }) {
 
         {match.finished && (
           <div className="mt-10">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">Detalle de tantos</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Detalle de tantos</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="bg-gradient-to-br from-green-50 to-white dark:from-green-900/20 dark:to-slate-800 rounded-2xl p-5 border border-green-100 dark:border-green-900/50 shadow-sm">
+              <div className="bg-gradient-to-br from-green-50 to-white rounded-2xl p-5 border border-green-100 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-green-700 dark:text-green-400">Curiyú</h3>
+                  <h3 className="text-lg font-bold text-green-700">Curiyú</h3>
                   <span className="text-2xl font-black text-green-600">{curiyuTotalPoints}</span>
                 </div>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600 dark:text-gray-300">Tries</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{curiyuStats.tries} <span className="text-gray-400">→</span> {curiyuTryPoints} pts</span>
+                    <span className="text-gray-600">Tries</span>
+                    <span className="font-semibold text-gray-900">{curiyuStats.tries} <span className="text-gray-400">→</span> {curiyuTryPoints} pts</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600 dark:text-gray-300">Conversiones</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{curiyuStats.conversions} <span className="text-gray-400">→</span> {curiyuConversionPoints} pts</span>
+                    <span className="text-gray-600">Conversiones</span>
+                    <span className="font-semibold text-gray-900">{curiyuStats.conversions} <span className="text-gray-400">→</span> {curiyuConversionPoints} pts</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600 dark:text-gray-300">Penales</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{curiyuStats.penalties} <span className="text-gray-400">→</span> {curiyuPenaltyPoints} pts</span>
+                    <span className="text-gray-600">Penales</span>
+                    <span className="font-semibold text-gray-900">{curiyuStats.penalties} <span className="text-gray-400">→</span> {curiyuPenaltyPoints} pts</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600 dark:text-gray-300">Try penal</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{curiyuStats.tryPenalties} <span className="text-gray-400">→</span> {curiyuTryPenaltyPoints} pts</span>
+                    <span className="text-gray-600">Try penal</span>
+                    <span className="font-semibold text-gray-900">{curiyuStats.tryPenalties} <span className="text-gray-400">→</span> {curiyuTryPenaltyPoints} pts</span>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-gray-50 to-white dark:from-slate-700/50 dark:to-slate-800 rounded-2xl p-5 border border-gray-200 dark:border-slate-700 shadow-sm">
+              <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-5 border border-gray-200 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300">Rival</h3>
-                  <span className="text-2xl font-black text-gray-700 dark:text-gray-200">{rivalTotalPoints}</span>
+                  <h3 className="text-lg font-bold text-gray-700">Rival</h3>
+                  <span className="text-2xl font-black text-gray-700">{rivalTotalPoints}</span>
                 </div>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600 dark:text-gray-300">Tries</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{rivalStats.tries} <span className="text-gray-400">→</span> {rivalTryPoints} pts</span>
+                    <span className="text-gray-600">Tries</span>
+                    <span className="font-semibold text-gray-900">{rivalStats.tries} <span className="text-gray-400">→</span> {rivalTryPoints} pts</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600 dark:text-gray-300">Conversiones</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{rivalStats.conversions} <span className="text-gray-400">→</span> {rivalConversionPoints} pts</span>
+                    <span className="text-gray-600">Conversiones</span>
+                    <span className="font-semibold text-gray-900">{rivalStats.conversions} <span className="text-gray-400">→</span> {rivalConversionPoints} pts</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600 dark:text-gray-300">Penales</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{rivalStats.penalties} <span className="text-gray-400">→</span> {rivalPenaltyPoints} pts</span>
+                    <span className="text-gray-600">Penales</span>
+                    <span className="font-semibold text-gray-900">{rivalStats.penalties} <span className="text-gray-400">→</span> {rivalPenaltyPoints} pts</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600 dark:text-gray-300">Try penal</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{rivalStats.tryPenalties} <span className="text-gray-400">→</span> {rivalTryPenaltyPoints} pts</span>
+                    <span className="text-gray-600">Try penal</span>
+                    <span className="font-semibold text-gray-900">{rivalStats.tryPenalties} <span className="text-gray-400">→</span> {rivalTryPenaltyPoints} pts</span>
                   </div>
                 </div>
               </div>
@@ -204,7 +204,7 @@ export default function MatchDetail({ match }) {
               <button
                 onClick={() => setShowPointsInfo((prev) => !prev)}
                 aria-expanded={showPointsInfo}
-                className="w-full flex items-center justify-between bg-blue-50 dark:bg-slate-900/60 rounded-2xl p-4 text-sm font-semibold text-blue-800 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-slate-800 transition-colors"
+                className="w-full flex items-center justify-between bg-blue-50 rounded-2xl p-4 text-sm font-semibold text-blue-800 hover:bg-blue-100 transition-colors"
               >
                 <span>¿Cómo se suman los puntos?</span>
                 <svg
@@ -217,26 +217,26 @@ export default function MatchDetail({ match }) {
                 </svg>
               </button>
               {showPointsInfo && (
-                <div className="mt-2 bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm animate-fadeIn">
+                <div className="mt-2 bg-white rounded-2xl p-5 shadow-sm animate-fadeIn border border-gray-100">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-                    <div className="bg-gray-50 dark:bg-slate-900/50 rounded-lg p-3">
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">5</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Try</p>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-2xl font-bold text-gray-900">5</p>
+                      <p className="text-xs text-gray-500">Try</p>
                     </div>
-                    <div className="bg-gray-50 dark:bg-slate-900/50 rounded-lg p-3">
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">2</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Conversión</p>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-2xl font-bold text-gray-900">2</p>
+                      <p className="text-xs text-gray-500">Conversión</p>
                     </div>
-                    <div className="bg-gray-50 dark:bg-slate-900/50 rounded-lg p-3">
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">3</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Penal</p>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-2xl font-bold text-gray-900">3</p>
+                      <p className="text-xs text-gray-500">Penal</p>
                     </div>
-                    <div className="bg-gray-50 dark:bg-slate-900/50 rounded-lg p-3">
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">8</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Try penal</p>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-2xl font-bold text-gray-900">8</p>
+                      <p className="text-xs text-gray-500">Try penal</p>
                     </div>
                   </div>
-                  <p className="mt-3 text-xs text-blue-600 dark:text-blue-300">
+                  <p className="mt-3 text-xs text-blue-600">
                     * El try penal vale 8 puntos porque equivale a un try (5) + un penal (3).
                   </p>
                 </div>
@@ -255,7 +255,7 @@ export default function MatchDetail({ match }) {
             </svg>
             Compartir partido
           </button>
-          {shareStatus && <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{shareStatus}</p>}
+          {shareStatus && <p className="mt-2 text-sm text-gray-500">{shareStatus}</p>}
         </div>
       </div>
     </article>

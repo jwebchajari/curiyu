@@ -1,19 +1,14 @@
 /**
  * Ruta: src/app/fixture/[slug]/page.jsx
- * Resumen: Página de detalle de un partido específico.
- * Lógica: Obtiene el partido por ID (slug) desde Firestore. En Next.js 15, `params` es
- *         una Promise, por lo que se usa `await params` para obtener el slug.
- *         Genera metadatos dinámicos para SEO, incluyendo imagen optimizada para compartir.
- *         Muestra una imagen de portada grande (si existe) y luego el detalle.
- * Debería: Mostrar todos los detalles del partido al hacer clic en "Ver más" desde la lista,
- *          y permitir compartir el enlace con imagen y título personalizados.
+ * Resumen: Detalle de un partido específico.
+ * Estilo: Fondo blanco, sin gradientes.
  */
 import { adminDb } from "@/lib/firebase/admin";
 import MatchDetail from "@/components/fixture/MatchDetail";
 import PageHeader from "@/components/layout/PageHeader";
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { getOptimizedUrlFromUrl } from "@/lib/cloudinary-server"; // <-- Importación agregada
+import { getOptimizedUrlFromUrl } from "@/lib/cloudinary-server";
 
 export const dynamic = "force-dynamic";
 
@@ -42,9 +37,7 @@ export async function generateMetadata({ params }) {
     const match = serializeMatch(docSnap);
     const sportLabel = match.sport === "hockey" ? "Hockey" : "Rugby";
     const title = `${match.homeTeam} vs ${match.awayTeam} | ${sportLabel} | Club Curiyú`;
-    const description = `Partido de ${sportLabel} en el Club Curiyú. ${
-      match.finished ? `Resultado: ${match.homeScore} - ${match.awayScore}` : "Próximo partido"
-    }`;
+    const description = `Partido de ${sportLabel} en el Club Curiyú. ${match.finished ? `Resultado: ${match.homeScore} - ${match.awayScore}` : "Próximo partido"}`;
 
     let imageUrl;
     if (match.imageUrl && match.imageUrl !== "") {
@@ -110,7 +103,7 @@ export default async function MatchDetailPage({ params }) {
   const imageUrl = match.imageUrl && match.imageUrl !== "" ? match.imageUrl : "/logo2.png";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
+    <div className="min-h-screen bg-white">
       <div className="max-w-4xl mx-auto px-4 py-10 md:py-16">
         <PageHeader
           eyebrow={match.sport === "hockey" ? "Hockey" : "Rugby"}
@@ -118,7 +111,7 @@ export default async function MatchDetailPage({ params }) {
         />
 
         {/* Banner de imagen grande */}
-        <div className="relative h-52 md:h-96 w-full rounded-2xl overflow-hidden mb-8 shadow-xl">
+        <div className="relative h-52 md:h-96 w-full rounded-2xl overflow-hidden mb-8 shadow-xl bg-gray-100">
           <Image
             src={imageUrl}
             alt={`${match.homeTeam} vs ${match.awayTeam}`}
