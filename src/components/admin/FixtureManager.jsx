@@ -252,7 +252,6 @@ function MatchResultForm({ match, onCancel }) {
 // ---------- Fila de partido ----------
 function MatchRow({ match, isExpanded, onToggle, onDelete }) {
     const isFinished = match.finished;
-    // Seleccionar imagen por defecto según estado
     const fallbackImage = isFinished ? "/fin.png" : "/proximo.png";
     const imageUrl = match.imageUrl || fallbackImage;
     const optimizedImage = getOptimizedCloudinaryUrl(imageUrl, 400);
@@ -422,6 +421,7 @@ export default function FixtureManager({ matches }) {
 
     return (
         <div className="space-y-6 sm:space-y-8">
+            {/* Carga Masiva */}
             <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-200">
                 <h3 className="font-bold text-lg sm:text-xl mb-4">📥 Carga Masiva por Excel</h3>
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center">
@@ -431,6 +431,7 @@ export default function FixtureManager({ matches }) {
                 </div>
             </div>
 
+            {/* Formulario manual */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200">
                 <button onClick={() => setShowManualForm((v) => !v)} className="w-full text-left px-5 sm:px-6 py-4 font-bold flex justify-between items-center rounded-xl"><span className="text-base sm:text-lg">+ Cargar partido manual</span><span className="text-gray-400">{showManualForm ? "▲" : "▼"}</span></button>
                 {showManualForm && (
@@ -448,15 +449,18 @@ export default function FixtureManager({ matches }) {
                 )}
             </div>
 
+            {/* Destacados: Hoy y Próximo */}
             {todayMatches.length > 0 && (<div className="bg-yellow-500 text-white p-5 sm:p-6 rounded-xl shadow-lg border-2 border-yellow-300"><h2 className="text-sm sm:text-base font-bold uppercase tracking-widest opacity-80 mb-2">🔥 HOY</h2>{todayMatches.map((match) => (<div key={match.id} className="mb-2 last:mb-0"><p className="text-xl sm:text-2xl lg:text-3xl font-bold leading-tight">{match.homeTeam} <span className="text-yellow-100">vs</span> {match.awayTeam}</p><p className="text-sm sm:text-base opacity-90 mt-1">📅 {new Date(match.date).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })} {" "}· {match.sport} · {match.gender} · {match.level}</p></div>))}</div>)}
 
             {upcomingMatch && (<div className="bg-verde text-white p-5 sm:p-6 rounded-xl shadow-lg border-2 border-white"><h2 className="text-sm sm:text-base font-bold uppercase tracking-widest opacity-80 mb-2">🔜 Próximo Partido</h2><p className="text-xl sm:text-2xl lg:text-3xl font-bold leading-tight">{upcomingMatch.homeTeam} <span className="text-verde-claro">vs</span> {upcomingMatch.awayTeam}</p><p className="text-sm sm:text-base opacity-90 mt-2">📅 {new Date(upcomingMatch.date).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })} {" "}· {upcomingMatch.sport} · {upcomingMatch.gender} · {upcomingMatch.level}</p></div>)}
 
+            {/* Pestañas */}
             <div className="flex gap-2 sm:gap-3 flex-wrap">
                 <button onClick={() => handleTabChange("proximos")} className={tabButtonClass("proximos")}>Próximos ({proximos.length})</button>
                 <button onClick={() => handleTabChange("finalizados")} className={tabButtonClass("finalizados")}>Finalizados ({finalizados.length})</button>
             </div>
 
+            {/* Filtros */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <select value={sportFilter} onChange={handleSportFilterChange} className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde"><option value="todos">Todos los deportes</option>{sports.filter(s => s !== "todos").map(s => (<option key={s} value={s}>{s === "rugby" ? "🏉 Rugby" : s === "hockey" ? "🏑 Hockey" : s}</option>))}</select>
                 <select value={genderFilter} onChange={handleGenderFilterChange} disabled={sportFilter === "todos"} className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde disabled:bg-gray-100 disabled:text-gray-400"><option value="todos">Todos los géneros</option>{genders.filter(g => g !== "todos").map(g => (<option key={g} value={g}>{g}</option>))}</select>
@@ -464,13 +468,16 @@ export default function FixtureManager({ matches }) {
                 <input type="text" placeholder="Buscar por equipo..." value={search} onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE); }} className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-verde" />
             </div>
 
+            {/* Lista de partidos */}
             <div className="space-y-4">
                 {visibleList.length === 0 && (<p className="text-gray-500 text-center py-8 text-sm sm:text-base">No hay partidos que coincidan con los filtros.</p>)}
                 {visibleList.map((match) => (<MatchRow key={match.id} match={match} isExpanded={expandedMatches.includes(match.id)} onToggle={() => toggleExpand(match.id)} onDelete={() => handleDelete(match.id)} />))}
             </div>
 
+            {/* Botón "Ver más" */}
             {visibleCount < filteredList.length && (<div className="text-center"><button onClick={() => setVisibleCount((v) => v + PAGE_SIZE)} className="bg-white border border-gray-300 px-6 py-2.5 rounded-full font-bold hover:bg-gray-50 transition text-sm sm:text-base">Cargar más ({filteredList.length - visibleCount} restantes)</button></div>)}
 
+            {/* Modal de confirmación */}
             <ConfirmModal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} onConfirm={confirmDelete} title="Eliminar partido" message="¿Estás seguro de que deseas eliminar este partido? Esta acción no se puede deshacer." confirmText="Eliminar" cancelText="Cancelar" isLoading={isDeleting} />
         </div>
     );
