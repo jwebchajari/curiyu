@@ -46,7 +46,8 @@ function getMatchImage(match, baseUrl) {
 }
 
 export async function generateMetadata({ params }) {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://clubcuriyu.com";
+  // Usar localhost para desarrollo si no hay variable de entorno
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   try {
     const resolvedParams = await params;
     const slug = resolvedParams?.slug;
