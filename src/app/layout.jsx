@@ -12,6 +12,7 @@
 import { AuthProvider } from "@/context/AuthContext";
 import Navbar from "@/components/layout/Navbar";
 import "./globals.css";
+import Footer from "@/components/layout/Footer";
 
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
@@ -79,7 +80,9 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <Navbar />
           <main className="flex-1">{children}</main>
+          <Footer />
         </AuthProvider>
+
       </body>
     </html>
   );
